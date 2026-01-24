@@ -86,8 +86,35 @@
 	      display.innerText = "エラー：取得できませんでした";
 	    }
 	  }
-
 	  main();
+	  
+	  document.getElementById('workForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // ユーザー情報の取得
+            const profile = await liff.getProfile();
+            
+            const formData = {
+            	action: "achieve",
+                userId: profile.userId,
+                userName: profile.displayName,
+                date: document.getElementById('datePicker').value,
+                startTime: document.getElementById('startTime').value,
+                endTime: document.getElementById('endTime').value,
+                memo: document.getElementById('memo').value
+            };
+
+            // GASへデータを送信
+            await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            alert('送信完了！お疲れ様でした。');
+            liff.closeWindow(); // LIFFを閉じる
+        });
 	</script>
 </body>
 </html>
