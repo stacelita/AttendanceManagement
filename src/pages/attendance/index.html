@@ -25,7 +25,8 @@
         <input type="time" id="endTime" required>
         <label>備考</label>
         <input type="text" id="memo">
-        <button type="submit">送信する</button>
+        <button type="submit" id="submitBtn">送信する</button>
+        <div id="loading" style="display:none; text-align:center; color: #666;">送信中...</div>
     </form>
 
     <script>
@@ -89,32 +90,53 @@
 	  main();
 	  
 	  document.getElementById('workForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // ユーザー情報の取得
-            const profile = await liff.getProfile();
-            
-            const formData = {
-            	action: "achieve",
-                userId: profile.userId,
-                userName: profile.displayName,
-                date: document.getElementById('datePicker').value,
-                startTime: document.getElementById('startTime').value,
-                endTime: document.getElementById('endTime').value,
-                memo: document.getElementById('memo').value
-            };
+	    e.preventDefault();
 
-            // GASへデータを送信
-            await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
+	    const btn = document.getElementById('submitBtn');
+	    const loading = document.getElementById('loading');
 
-            alert('送信完了！お疲れ様でした。');
-            liff.closeWindow(); // LIFFを閉じる
-        });
+	    // --- 【追加】送信開始時の処理 ---
+	    btn.disabled = true;          // ボタンを押せなくする
+	    btn.innerText = '送信中...';   // ボタンの文字を変える
+	    btn.style.opacity = '0.5';     // 見た目を薄くする
+	    if(loading) loading.style.display = 'block'; // メッセージを表示
+
+	    try {
+	        // ユーザー情報の取得
+	        const profile = await liff.getProfile();
+	        
+	        const formData = {
+	            action: "achieve",
+	            userId: profile.userId,
+	            userName: profile.displayName,
+	            date: document.getElementById('datePicker').value,
+	            startTime: document.getElementById('startTime').value,
+	            endTime: document.getElementById('endTime').value,
+	            memo: document.getElementById('memo').value
+	        };
+
+	        // GASへデータを送信
+	        await fetch(GAS_URL, {
+	            method: 'POST',
+	            mode: 'no-cors',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify(formData)
+	        });
+
+	        alert('送信完了！お疲れ様でした。');
+	        liff.closeWindow(); 
+
+	    } catch (error) {
+	        console.error(error);
+	        alert('エラーが発生しました。もう一度お試しください。');
+	        
+	        // --- 【追加】エラー時はボタンを元に戻す ---
+	        btn.disabled = false;
+	        btn.innerText = '送信する';
+	        btn.style.opacity = '1';
+	        if(loading) loading.style.display = 'none';
+	    }
+	});
 	</script>
 </body>
 </html>
