@@ -146,11 +146,10 @@
 
 	        await fetch(GAS_URL, {
 	            method: 'POST',
+	            mode: 'no-cors',
 	            headers: { 'Content-Type': 'application/json' },
 	            body: JSON.stringify(formData)
 	        });
-	        
-	        
 
 	        alert('送信完了！お疲れ様でした。');
 	        liff.closeWindow(); 
