@@ -151,6 +151,15 @@
 	            body: JSON.stringify(formData)
 	        });
 
+		    if (liff.isInClient()) {
+		        await liff.sendMessages([
+		            {
+		                type: 'text',
+		                text: `【勤務実績登録】\n日付：${formData.date}\n時間：${formData.startTime}～${formData.endTime}\n備考：${formData.memo || 'なし'}`
+		            }
+		        ]);
+		    }
+        
 	        alert('送信完了！お疲れ様でした。');
 	        liff.closeWindow(); 
 
