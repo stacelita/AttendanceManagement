@@ -146,20 +146,10 @@
 
 	        await fetch(GAS_URL, {
 	            method: 'POST',
+	            mode: 'no-cors',
 	            headers: { 'Content-Type': 'application/json' },
 	            body: JSON.stringify(formData)
 	        });
-	        
-	        // 2. LINEトーク画面にメッセージを投稿 (無料枠を消費しない)
-	        // GASの処理が失敗した場合は catch に飛ぶため、ここは成功時のみ実行されます
-	        if (liff.isInClient()) {
-	            await liff.sendMessages([
-	                {
-	                    type: 'text',
-	                    text: `【勤務実績登録】\n日付：${formData.date}\n時間：${formData.startTime}～${formData.endTime}\n備考：${formData.memo || 'なし'}`
-	                }
-	            ]);
-	        }
 
 	        alert('送信完了！お疲れ様でした。');
 	        liff.closeWindow(); 
