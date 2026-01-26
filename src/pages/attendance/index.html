@@ -165,7 +165,7 @@
 
 	    } catch (error) {
 	        console.error(error);
-	        alert('エラーが発生しました。');
+	        alert(error.message + JSON.stringify(error));
 	        
 	        // --- エラー時はロックを解除して再操作可能にする ---
 	        overlay.style.display = 'none';
