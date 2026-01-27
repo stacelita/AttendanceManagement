@@ -26,7 +26,8 @@ async function setupAttendancePage() {
     const today = new Date().toLocaleDateString('sv-SE');
     datePicker.value = today;
     fetchShift(today);
-
+	setupKubunDropdown('workCategory', '1');
+	
     datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
 
     // フォーム送信
@@ -85,3 +86,29 @@ async function handleAttendanceSubmit(e) {
     }
 }
 
+/**
+ * GETリクエストで区分データを取得してプルダウンを生成する
+ */
+async function setupKubunDropdown(selectId, kubunType) {
+    const selectEl = document.getElementById(selectId);
+    if (!selectEl) return;
+
+    try {
+        // URLパラメータを構築
+        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;
+        
+        const response = await fetch(url);
+        const dataList = await response.json();
+
+        selectEl.innerHTML = '<option value="">選択してください</option>';
+
+        dataList.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.value;
+            option.textContent = item.name;
+            selectEl.appendChild(option);
+        });
+    } catch (error) {
+        console.error("区分データ取得エラー:", error);
+    }
+}

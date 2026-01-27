@@ -55,6 +55,8 @@
         <div id="result">
             勤務場所: <span id="locationDisplay">読み込み中...</span>
         </div>
+        <label for="workCategory">稼働内容:</label>
+        <select id="workCategory"></select>
         <label>開始時間</label>
         <input type="time" id="startTime" required>
         <label>終了時間</label>
@@ -66,8 +68,6 @@
 
     <script>
 		setupAttendancePage();
-		fetchShift();
-		handleAttendanceSubmit();
 	</script>
 </body>
 </html>
