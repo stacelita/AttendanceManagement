@@ -25,8 +25,9 @@ async function setupAttendancePage() {
     const datePicker = document.getElementById('datePicker');
     const today = new Date().toLocaleDateString('sv-SE');
     datePicker.value = today;
-    await fetchShift(today);
-	await setupKubunDropdown('workCategory', '1');
+    fetchShift(today);
+	setupKubunDropdown('workCategory', '1');
+	setupKubunDropdown('workItem', '2');
 	
     datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
 
@@ -62,14 +63,18 @@ async function handleAttendanceSubmit(e) {
         const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
         const categoryValue = categorySelect.value;
         
+        const itemSelect = document.getElementById('workItem');
+        const itemName = itemSelect.options[itemSelect.selectedIndex].text;
+        const itemValue = itemSelect.value;
+        
         const formData = {
             action: "achieve",
             userId: profile.userId,
             userName: profile.displayName,
             date: document.getElementById('datePicker').value,
-            categoryName: categoryValue,
-            startTime: document.getElementById('startTime').value,
-            endTime: document.getElementById('endTime').value,
+            categoryValue: categoryValue,
+            itemValue: itemValue,
+            uniqueProducts: document.getElementById('uniqueProducts').value
             memo: document.getElementById('memo').value
         };
 
@@ -85,7 +90,8 @@ async function handleAttendanceSubmit(e) {
                 text: `【勤務実績登録】\n` +
                       `日付：${formData.date}\n` +
                       `稼働内容：${categoryName}\n` +
-                      `時間：${formData.startTime}～${formData.endTime}\n` +
+                      `獲得項目：${itemName}\n` +
+                      `独自商材：${formData.uniqueProducts}\n` +
                       `備考：${formData.memo || 'なし'}`
             }]);
         }
