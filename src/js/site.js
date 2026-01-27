@@ -25,8 +25,8 @@ async function setupAttendancePage() {
     const datePicker = document.getElementById('datePicker');
     const today = new Date().toLocaleDateString('sv-SE');
     datePicker.value = today;
-    fetchShift(today);
-	setupKubunDropdown('workCategory', '1');
+    await fetchShift(today);
+	await setupKubunDropdown('workCategory', '1');
 	
     datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
 
@@ -56,11 +56,18 @@ async function handleAttendanceSubmit(e) {
 
     try {
         const profile = await liff.getProfile();
+        
+        // --- プルダウンの「テキスト（区分名）」を取得する ---
+        const categorySelect = document.getElementById('workCategory');
+        const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
+        const categoryValue = categorySelect.value;
+        
         const formData = {
             action: "achieve",
             userId: profile.userId,
             userName: profile.displayName,
             date: document.getElementById('datePicker').value,
+            categoryName: categoryValue,
             startTime: document.getElementById('startTime').value,
             endTime: document.getElementById('endTime').value,
             memo: document.getElementById('memo').value
@@ -75,7 +82,11 @@ async function handleAttendanceSubmit(e) {
         if (liff.isInClient()) {
             await liff.sendMessages([{
                 type: 'text',
-                text: `【勤務実績登録】\n日付：${formData.date}\n時間：${formData.startTime}～${formData.endTime}`
+                text: `【勤務実績登録】\n` +
+                      `日付：${formData.date}\n` +
+                      `区分：${formData.categoryName}\n` +
+                      `時間：${formData.startTime}～${formData.endTime}\n` +
+                      `備考：${formData.memo || 'なし'}`
             }]);
         }
         alert('送信完了！');
