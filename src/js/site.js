@@ -84,7 +84,7 @@ async function handleAttendanceSubmit(e) {
                 type: 'text',
                 text: `【勤務実績登録】\n` +
                       `日付：${formData.date}\n` +
-                      `区分：${formData.categoryName}\n` +
+                      `稼働内容：${categoryName}\n` +
                       `時間：${formData.startTime}～${formData.endTime}\n` +
                       `備考：${formData.memo || 'なし'}`
             }]);
