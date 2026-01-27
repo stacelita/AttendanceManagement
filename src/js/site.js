@@ -25,9 +25,9 @@ async function setupAttendancePage() {
     const datePicker = document.getElementById('datePicker');
     const today = new Date().toLocaleDateString('sv-SE');
     datePicker.value = today;
-    await fetchShift(today);
-	await setupKubunDropdown('workCategory', '1');
-	await setupKubunDropdown('workItem', '2');
+    fetchShift(today);
+	setupKubunDropdown('workCategory', '1');
+	setupKubunDropdown('workItem', '2');
 	
     datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
 
@@ -74,7 +74,7 @@ async function handleAttendanceSubmit(e) {
             date: document.getElementById('datePicker').value,
             categoryValue: categoryValue,
             itemValue: itemValue,
-            uniqueProducts: document.getElementById('uniqueProducts').value
+            uniqueProducts: document.getElementById('uniqueProducts').value,
             memo: document.getElementById('memo').value
         };
 
