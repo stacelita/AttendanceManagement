@@ -22,8 +22,8 @@ async function setupAttendancePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        //const isInit = await initLiff();
-        //if (!isInit) return;
+        const isInit = await initLiff();
+        if (!isInit) return;
 
         // 日付セット
         const datePicker = document.getElementById('datePicker');
