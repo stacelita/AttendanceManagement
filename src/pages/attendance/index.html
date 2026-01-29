@@ -55,9 +55,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: #ffffff; /* 初期ロード時は白背景が自然 */
             z-index: 9999;
-            display: none;
+            display: flex; /* 最初から表示 */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -73,10 +73,8 @@
 </head>
 <body>
 	<div id="overlay">
-        <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <div class="mt-2 fw-bold text-success">送信中...</div>
+        <div class="spinner-border text-success" role="status"></div>
+        <div id="overlayText" class="mt-2 fw-bold text-success">読み込み中...</div>
     </div>
     <div class="container py-4">
         <div class="text-center mb-4">

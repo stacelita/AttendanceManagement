@@ -18,20 +18,36 @@ async function initLiff() {
 
 // 勤怠ページ専用の初期化処理
 async function setupAttendancePage() {
-    const isInit = await initLiff();
-    if (!isInit) return;
+    const overlay = document.getElementById('overlay');
+    const overlayText = document.getElementById('overlayText');
 
-    // 日付セットと検索
-    const datePicker = document.getElementById('datePicker');
-    const today = new Date().toLocaleDateString('sv-SE');
-    datePicker.value = today;
-    fetchShift(today);
-	setupKubunDropdown('workCategory', '1');
-	setupKubunDropdown('workItem', '2');
-	
+    try {
+        const isInit = await initLiff();
+        if (!isInit) return;
+
+        // 日付セット
+        const datePicker = document.getElementById('datePicker');
+        const today = new Date().toLocaleDateString('sv-SE');
+        datePicker.value = today;
+
+        // 【重要】全ての非同期処理（シフト・プルダウン2つ）を並列で実行し、完了を待つ
+        await Promise.all([
+            fetchShift(today),
+            setupKubunDropdown('workCategory', '1'),
+            setupKubunDropdown('workItem', '2')
+        ]);
+
+        // 全て終わったらオーバーレイを隠す
+        overlay.style.setProperty('display', 'none', 'important');
+
+    } catch (error) {
+        console.error("初期化エラー:", error);
+        overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
+        // エラー時はあえて消さない、またはアラートを出すなどの処理
+    }
+
+    // イベントリスナー登録
     datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
-
-    // フォーム送信
     document.getElementById('workForm').addEventListener('submit', handleAttendanceSubmit);
 }
 
@@ -53,7 +69,8 @@ async function fetchShift(selectedDate) {
 async function handleAttendanceSubmit(e) {
     e.preventDefault();
     const overlay = document.getElementById('overlay');
-    if (overlay) overlay.style.display = 'flex';
+    document.getElementById('overlayText').textContent = "送信中...";
+    overlay.style.display = 'flex';
 
     try {
         const profile = await liff.getProfile();
@@ -99,7 +116,10 @@ async function handleAttendanceSubmit(e) {
         liff.closeWindow();
     } catch (error) {
         alert('エラーが発生しました。');
-        if (overlay) overlay.style.display = 'none';
+        overlay.style.display = 'none';
+    } finally {
+        // 成功しても失敗しても最後は隠す
+        overlay.style.display = 'none';
     }
 }
 
