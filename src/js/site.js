@@ -22,8 +22,8 @@ async function setupAttendancePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        const isInit = await initLiff();
-        if (!isInit) return;
+        //const isInit = await initLiff();
+        //if (!isInit) return;
 
         // 日付セット
         const datePicker = document.getElementById('datePicker');
@@ -34,7 +34,8 @@ async function setupAttendancePage() {
         await Promise.all([
             fetchShift(today),
             setupKubunDropdown('workCategory', '1'),
-            setupKubunDropdown('workItem', '2')
+            //setupKubunDropdown('workItem', '2', false)
+            setupWorkItemList(2)
         ]);
 
         // 全て終わったらオーバーレイを隠す
@@ -80,9 +81,13 @@ async function handleAttendanceSubmit(e) {
         const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
         const categoryValue = categorySelect.value;
         
-        const itemSelect = document.getElementById('workItem');
-        const itemName = itemSelect.options[itemSelect.selectedIndex].text;
-        const itemValue = itemSelect.value;
+        // --- 獲得項目（リスト形式・複数選択）の取得 ---
+        const selectedItems = getSelectedItems(); // さきほど作成した関数
+        
+        // 獲得項目を「項目A: 2, 項目B: 1」のような表示用テキストにする
+        const itemsText = selectedItems.length > 0 
+            ? selectedItems.map(item => `${item.name}: ${item.count}`).join('\n') 
+            : 'なし';
         
         const formData = {
             action: "achieve",
@@ -90,7 +95,7 @@ async function handleAttendanceSubmit(e) {
             userName: profile.displayName,
             date: document.getElementById('datePicker').value,
             categoryValue: categoryValue,
-            itemValue: itemValue,
+            items: selectedItems,
             uniqueProducts: document.getElementById('uniqueProducts').value,
             memo: document.getElementById('memo').value
         };
@@ -107,7 +112,9 @@ async function handleAttendanceSubmit(e) {
                 text: `【勤務実績登録】\n` +
                       `日付：${formData.date}\n` +
                       `稼働内容：${categoryName}\n` +
-                      `獲得項目：${itemName}\n` +
+                      `--- 獲得項目 ---\n` +
+                      `${itemsText}\n` +
+                      `----------------\n` +
                       `独自商材：${formData.uniqueProducts}\n` +
                       `備考：${formData.memo || 'なし'}`
             }]);
@@ -125,19 +132,28 @@ async function handleAttendanceSubmit(e) {
 
 /**
  * GETリクエストで区分データを取得してプルダウンを生成する
+ * @param {*} selectId 
+ * @param {*} kubunType 
+ * @param {*} addDefault 
+ * @returns 
  */
-async function setupKubunDropdown(selectId, kubunType) {
+async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
     const selectEl = document.getElementById(selectId);
     if (!selectEl) return;
 
     try {
         // URLパラメータを構築
-        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;
-        
+        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;  
         const response = await fetch(url);
         const dataList = await response.json();
 
-        selectEl.innerHTML = '<option value="">選択してください</option>';
+        // addDefaultがtrueの場合のみデフォルト項目を追加
+        if (addDefault) {
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "選択してください";
+            selectEl.appendChild(defaultOption);
+        }
 
         dataList.forEach(item => {
             const option = document.createElement('option');
@@ -148,4 +164,66 @@ async function setupKubunDropdown(selectId, kubunType) {
     } catch (error) {
         console.error("区分データ取得エラー:", error);
     }
+}
+
+/**
+ * 獲得項目をリスト形式で生成（個数選択付き）
+ */
+async function setupWorkItemList(kubunType) {
+    const container = document.getElementById('workItemList');
+    if (!container) return;
+
+    try {
+        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;
+        const response = await fetch(url);
+        const dataList = await response.json();
+
+        container.innerHTML = ''; // クリア
+
+        dataList.forEach(item => {
+            // 1行分のラッパー
+            const div = document.createElement('div');
+            div.className = "list-group-item d-flex justify-content-between align-items-center py-3";
+            
+            // 項目名
+            const nameSpan = document.createElement('span');
+            nameSpan.className = "fw-bold text-secondary";
+            nameSpan.textContent = item.name;
+            
+            // 数字プルダウン (0〜10まで選択可能にする例)
+            const select = document.createElement('select');
+            select.className = "form-select form-select-sm w-auto item-count-select";
+            select.dataset.itemId = item.value; // IDを保持
+            select.dataset.itemName = item.name; // 名前も保持しておくと便利
+
+            for (let i = 0; i <= 10; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = i;
+                select.appendChild(opt);
+            }
+
+            div.appendChild(nameSpan);
+            div.appendChild(select);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error("獲得項目リスト取得エラー:", error);
+        container.innerHTML = '<div class="list-group-item text-danger">データの取得に失敗しました</div>';
+    }
+}
+
+function getSelectedItems() {
+    const selects = document.querySelectorAll('.item-count-select');
+    const results = [];
+    
+    selects.forEach(select => {
+        const count = parseInt(select.value);
+        results.push({
+            id: select.dataset.itemId,
+            name: select.dataset.itemName,
+            count: count
+        });
+    });
+    return results; // これをGASに送るオブジェクトに含める
 }
