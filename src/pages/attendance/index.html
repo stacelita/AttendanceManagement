@@ -4,133 +4,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>勤務実績入力</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="../../js/site.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        button { background-color: #06C755; color: white; border: none; border-radius: 5px; font-weight: bold; }
-        /* 画面全体を覆うレイヤー */
-		#overlay {
-		    position: fixed;
-		    top: 0;
-		    left: 0;
-		    width: 100%;
-		    height: 100%;
-		    background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒 */
-		    z-index: 9999; /* 一番手前に表示 */
-		    display: none; /* 最初は隠しておく */
-		    flex-direction: column;
-		    justify-content: center;
-		    align-items: center;
-		    color: white;
-		}
+        body {
+            background-color: #f8f9fa; /* 薄いグレーの背景 */
+            color: #333;
+        }
 
-		/* ぐるぐる回るアニメーション（任意） */
-		.loader {
-		    border: 5px solid #f3f3f3;
-		    border-top: 5px solid #06C755; /* LINEカラー */
-		    border-radius: 50%;
-		    width: 40px;
-		    height: 40px;
-		    animation: spin 1s linear infinite;
-		    margin-bottom: 10px;
-		}
+        .container {
+            max-width: 500px;
+        }
 
-		@keyframes spin {
-		    0% { transform: rotate(0deg); }
-		    100% { transform: rotate(360deg); }
-		}
-		body {
-		    margin: 0;
-		    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-		                 Roboto, "Helvetica Neue", Arial, sans-serif;
-		}
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
 
-		.title {
-		    padding: 12px 16px 4px;
-		    font-size: 18px;
-		}
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
 
-		.work-form {
-		    padding: 0 16px 24px;
-		}
+        .btn-line {
+            background-color: #06C755;
+            color: white;
+            border: none;
+            font-weight: bold;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
 
-		.form-group {
-		    display: flex;
-		    flex-direction: column;
-		    margin-bottom: 14px;
-		}
+        .btn-line:hover {
+            background-color: #05b34c;
+            color: white;
+            transform: translateY(-1px);
+        }
 
-		.form-group label {
-		    font-size: 13px;
-		    margin-bottom: 1px;
-		    color: #333;
-		}
+        /* ローディングオーバーレイ */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
 
-		.form-group input,
-		.form-group select {
-		    font-size: 16px;
-		    padding: 10px;
-		}
-
-		.form-group.info {
-		    font-size: 14px;
-		    padding: 6px 0;
-		}
-
-		.submit-btn {
-		    margin-top: 12px;
-		    padding: 12px;
-		    font-size: 16px;
-		    width: 100%;
-		}
-
+        .info-badge {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 	<div id="overlay">
-	    <div class="loader"></div>
-	    <div>送信中...</div>
-	</div>
-    <h3>勤務入力フォーム</h3>
-    <form id="workForm" class="work-form">
-        <div class="form-group">
-		    <label for="datePicker">日付</label>
-		    <input type="date" id="datePicker">
-		  </div>
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="mt-2 fw-bold text-success">送信中...</div>
+    </div>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h2 class="h4 fw-bold">勤務入力フォーム</h2>
+            <p class="text-muted small">本日の実績を入力してください</p>
+        </div>
 
-		  <div class="form-group info">
-		    勤務場所: <span id="locationDisplay">読み込み中...</span>
-		  </div>
+        <div class="card p-4">
+            <form id="workForm">
+                <div class="mb-3">
+                    <label for="datePicker" class="form-label">
+                        <i class="bi bi-calendar-event"></i> 日付
+                    </label>
+                    <input type="date" class="form-control" id="datePicker">
+                </div>
 
-		  <div class="form-group">
-		    <label for="workCategory">稼働内容</label>
-		    <select id="workCategory"></select>
-		  </div>
-		  
-		  <div class="form-group">
-		    <label for="workItem">獲得項目</label>
-		    <select id="workItem"></select>
-		  </div>
+                <div class="mb-4">
+                    <div class="info-badge border">
+                        <i class="bi bi-geo-alt-fill text-danger"></i> 
+                        <span class="fw-bold">勤務場所:</span> 
+                        <span id="locationDisplay">読み込み中...</span>
+                    </div>
+                </div>
 
-		  <div class="form-group">
-		    <label for="uniqueProducts">独自商材</label>
-		    <input type="text" id="uniqueProducts" placeholder="任意">
-		  </div>
+                <hr class="my-4 text-muted">
 
-		  <div class="form-group">
-		    <label for="memo">その他</label>
-		    <input type="text" id="memo" placeholder="任意">
-		  </div>
+                <div class="mb-3">
+                    <label for="workCategory" class="form-label">
+                        <i class="bi bi-briefcase"></i> 稼働内容
+                    </label>
+                    <select id="workCategory" class="form-select"></select>
+                </div>
 
-		  <button type="submit" id="submitBtn" class="submit-btn">
-		    送信する
-		  </button>
-    </form>
+                <div class="mb-3">
+                    <label for="workItem" class="form-label">
+                        <i class="bi bi-trophy"></i> 獲得項目
+                    </label>
+                    <select id="workItem" class="form-select"></select>
+                </div>
 
+                <div class="mb-3">
+                    <label for="uniqueProducts" class="form-label">
+                        <i class="bi bi-box-seam"></i> 独自商材
+                    </label>
+                    <input type="text" id="uniqueProducts" class="form-control" placeholder="任意で入力">
+                </div>
+
+                <div class="mb-4">
+                    <label for="memo" class="form-label">
+                        <i class="bi bi-pencil-square"></i> その他（メモ）
+                    </label>
+                    <textarea id="memo" class="form-control" rows="2" placeholder="特記事項があれば入力"></textarea>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn btn-line w-100 rounded-pill shadow-sm">
+                    送信
+                </button>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-		setupAttendancePage();
-	</script>
+        // JS関数呼び出し（既存のロジック）
+        setupAttendancePage();
+    </script>
 </body>
 </html>
