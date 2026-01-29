@@ -227,3 +227,23 @@ function getSelectedItems() {
     });
     return results; // これをGASに送るオブジェクトに含める
 }
+
+// 勤怠ページ専用の初期化処理
+async function setupProfilePage() {
+    const overlay = document.getElementById('overlay');
+    const overlayText = document.getElementById('overlayText');
+
+    try {
+        //const isInit = await initLiff();
+        //if (!isInit) return;
+
+        // 全て終わったらオーバーレイを隠す
+        overlay.style.setProperty('display', 'none', 'important');
+
+    } catch (error) {
+        console.error("初期化エラー:", error);
+        overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
+        // エラー時はあえて消さない、またはアラートを出すなどの処理
+    }
+
+}

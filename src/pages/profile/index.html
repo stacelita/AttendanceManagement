@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スタッフ情報登録</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="../../js/site.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa; /* 薄いグレーの背景 */
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-line {
+            background-color: #06C755;
+            color: white;
+            border: none;
+            font-weight: bold;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-line:hover {
+            background-color: #05b34c;
+            color: white;
+            transform: translateY(-1px);
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff; /* 初期ロード時は白背景が自然 */
+            z-index: 9999;
+            display: flex; /* 最初から表示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div class="spinner-border text-success" role="status"></div>
+        <div id="overlayText" class="mt-2 fw-bold text-success">読み込み中...</div>
+    </div>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h2 class="h4 fw-bold">スタッフ情報登録</h2>
+            <p class="text-muted small">あなたの情報を入力してください</p>
+        </div>
+
+        <div class="card p-4">
+            <form id="staffForm">
+                <div class="mb-3">
+                    <label for="userName" class="form-label">
+                        <i class="bi bi-person-fill"></i> 氏名
+                    </label>
+                    <input type="text" id="userName" class="form-control" placeholder="山田 太郎" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="userKana" class="form-label">
+                        <i class="bi bi-chat-dots"></i> フリガナ
+                    </label>
+                    <input type="text" id="userKana" class="form-control" placeholder="ヤマダ タロウ" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="birthDate" class="form-label">
+                        <i class="bi bi-calendar-heart"></i> 生年月日
+                    </label>
+                    <input type="date" id="birthDate" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="station" class="form-label">
+                        <i class="bi bi-train-front"></i> 最寄り駅
+                    </label>
+                    <input type="text" id="station" class="form-control" placeholder="〇〇線 △△駅" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="tel" class="form-label">
+                        <i class="bi bi-telephone"></i> 電話番号
+                    </label>
+                    <input type="tel" id="tel" class="form-control" placeholder="09012345678" required>
+                </div>
+
+                <button type="submit" class="btn btn-line w-100 rounded-pill shadow-sm">
+                    この内容で登録する
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        // LIFF初期化や送信処理をここに記述
+        setupProfilePage();
+    </script>
+</body>
+</html>
