@@ -1,10 +1,11 @@
-const LIFF_ID = '2008956543-HV2ZIzKe';
+const LIFF_ID_ARCHIVE = '2008956543-HV2ZIzKe';
+const LIFF_ID_PROFILE = '2008956543-MaLNj6aF';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKD_Su-tKQNM9U07-2S3I1yvBn-9bAKFABzwSTeckViKFomaP_Zm0K0L_EsYf_bSDSvg/exec';
 
 // LIFF初期化（どのページでも最初に呼ぶ）
-async function initLiff() {
+async function initLiff(inLiffId) {
     try {
-        await liff.init({ liffId: LIFF_ID });
+        await liff.init({ liffId: inLiffId });
         if (!liff.isLoggedIn()) {
             liff.login();
             return false;
@@ -22,7 +23,7 @@ async function setupAttendancePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        const isInit = await initLiff();
+        const isInit = await initLiff(LIFF_ID_ARCHIVE);
         if (!isInit) return;
 
         // 日付セット
@@ -234,7 +235,7 @@ async function setupProfilePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        const isInit = await initLiff();
+        const isInit = await initLiff(LIFF_ID_PROFILE);
         if (!isInit) return;
 
         // 全て終わったらオーバーレイを隠す
@@ -245,7 +246,7 @@ async function setupProfilePage() {
         overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
         // エラー時はあえて消さない、またはアラートを出すなどの処理
     }
-    //document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
+    document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
 }
 
 /**
