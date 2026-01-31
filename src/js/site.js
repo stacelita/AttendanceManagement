@@ -234,8 +234,8 @@ async function setupProfilePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        //const isInit = await initLiff();
-        //if (!isInit) return;
+        const isInit = await initLiff();
+        if (!isInit) return;
 
         // 全て終わったらオーバーレイを隠す
         overlay.style.setProperty('display', 'none', 'important');
@@ -245,5 +245,57 @@ async function setupProfilePage() {
         overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
         // エラー時はあえて消さない、またはアラートを出すなどの処理
     }
+    document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
+}
 
+/**
+ * 
+ * @param {*} e 
+ */
+async function handleProfilebmit(e) {
+    e.preventDefault();
+    const overlay = document.getElementById('overlay');
+    document.getElementById('overlayText').textContent = "送信中...";
+    overlay.style.display = 'flex';
+
+    try {
+        const profile = await liff.getProfile();
+ 
+        const formData = {
+            action: "profile",
+            userId: profile.userId,
+            displayName: profile.displayName,
+            userName: document.getElementById('userName').value,
+            userKana: document.getElementById('userKana').value,
+            birthDate: document.getElementById('birthDate').value,
+            station: document.getElementById('station').value,
+            tel: document.getElementById('tel').value,
+        };
+
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(formData)
+        });
+
+        if (liff.isInClient()) {
+            await liff.sendMessages([{
+                type: 'text',
+                text: `【スタッフ情報登録】\n` +
+                      `氏名：${formData.userName}\n` +
+                      `フリガナ：${formData.userKana}\n` +
+                      `生年月日：${formData.birthDate}\n` +
+                      `最寄り駅：${formData.station}\n` +
+                      `電話番号：${formData.tel}\n`
+            }]);
+        }
+        alert('送信完了！');
+        liff.closeWindow();
+    } catch (error) {
+        alert('エラーが発生しました。');
+        overlay.style.display = 'none';
+    } finally {
+        // 成功しても失敗しても最後は隠す
+        overlay.style.display = 'none';
+    }
 }
