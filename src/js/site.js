@@ -234,8 +234,8 @@ async function setupProfilePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        //const isInit = await initLiff();
-        //if (!isInit) return;
+        const isInit = await initLiff();
+        if (!isInit) return;
 
         // 全て終わったらオーバーレイを隠す
         overlay.style.setProperty('display', 'none', 'important');
