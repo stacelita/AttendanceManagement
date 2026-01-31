@@ -287,7 +287,7 @@ async function handleProfilebmit(e) {
                       `フリガナ：${formData.userKana}\n` +
                       `生年月日：${formData.birthDate}\n` +
                       `最寄り駅：${formData.station}\n` +
-                      `電話番号：${formData.tel}\n`
+                      `電話番号：${formData.tel}`
             }]);
         }
         alert('送信完了！');
