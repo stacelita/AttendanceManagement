@@ -234,8 +234,8 @@ async function setupProfilePage() {
     const overlayText = document.getElementById('overlayText');
 
     try {
-        const isInit = await initLiff();
-        if (!isInit) return;
+        //const isInit = await initLiff();
+        //if (!isInit) return;
 
         // 全て終わったらオーバーレイを隠す
         overlay.style.setProperty('display', 'none', 'important');
@@ -245,7 +245,7 @@ async function setupProfilePage() {
         overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
         // エラー時はあえて消さない、またはアラートを出すなどの処理
     }
-    document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
+    //document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
 }
 
 /**
