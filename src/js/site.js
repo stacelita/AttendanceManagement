@@ -341,10 +341,10 @@ async function handleAttendanceSubmit(e) {
       }]);
     }
 
-    await showModal("送信完了！");
+    alert("送信完了！");
     liff.closeWindow();
   } catch (error) {
-    await showModal(error.message || "エラーが発生しました。");
+    alert(error.message || "エラーが発生しました。");
   } finally {
     setOverlay(false);
   }
