@@ -156,12 +156,6 @@ function scrollToAndFocus(el) {
     // 無視
   }
 
-  // focus（できるなら。できない場合でもスクロール自体は効いてほしい）
-  try {
-    el.focus();
-  } catch {
-    // 無視
-  }
 }
 
 function validateAttendanceRequiredUI() {
