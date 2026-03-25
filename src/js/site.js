@@ -9,10 +9,12 @@ const ACTION = {
   PROFILE: "profile",
 };
 
+/** idによるHTML要素取得 */
 function getEl(id) {
   return document.getElementById(id);
 }
 
+/** オーバレイ設定 */
 function setOverlay(visible, text) {
   const overlay = getEl("overlay");
   const overlayText = getEl("overlayText");
@@ -21,11 +23,13 @@ function setOverlay(visible, text) {
   overlay.style.display = visible ? "flex" : "none";
 }
 
+/** ページ読み込み失敗 */
 function showPageInitError(message) {
   const overlayText = getEl("overlayText");
   if (overlayText) overlayText.textContent = message;
 }
 
+/** JSONパース */
 function parseJsonSafe(text) {
   try {
     return JSON.parse(text);
@@ -34,6 +38,7 @@ function parseJsonSafe(text) {
   }
 }
 
+/** apipostリクエスト */
 async function apiPost(payload) {
   const response = await fetch(GAS_URL, {
     method: "POST",
@@ -43,6 +48,7 @@ async function apiPost(payload) {
   return;
 }
 
+/** apigetリクエスト */
 async function apiGet(action, params) {
   const search = new URLSearchParams();
   search.set("action", action);
@@ -67,26 +73,6 @@ async function apiGet(action, params) {
   return data;
 }
 
-async function apiPostOrFallbackGet(payload) {
-  try {
-    return await apiPost(payload);
-  } catch (postError) {
-    console.warn("POST失敗のためGETへフォールバック:", postError);
-    const { action, items, ...rest } = payload || {};
-    const queryParams = { ...rest };
-    if (items !== undefined) queryParams.items = JSON.stringify(items);
-    return await apiGet(action, queryParams);
-  }
-}
-
-async function apiGetKubun(kubunType) {
-  const url = `${GAS_URL}?action=${ACTION.GET_KUBUN}&kubunType=${encodeURIComponent(kubunType)}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("区分データの取得に失敗しました。");
-  }
-  return response.json();
-}
 
 function scrollToAndFocus(el) {
   if (!el) return;
@@ -134,6 +120,7 @@ function scrollToAndFocus(el) {
 
 }
 
+/** 勤務実績フォーム検証 */
 function validateAttendanceRequiredUI() {
   const dateEl = getEl("datePicker");
   const categoryEl = getEl("workCategory");
@@ -156,6 +143,7 @@ function validateAttendanceRequiredUI() {
   return true;
 }
 
+/** 個情報報フォーム検証 */
 function validateProfileRequiredUI() {
   const userNameEl = getEl("userName");
   if (userNameEl && !userNameEl.checkValidity()) {
@@ -195,6 +183,7 @@ function validateProfileRequiredUI() {
   return true;
 }
 
+/** liff初期化処理 */
 async function initLiff(inLiffId) {
   try {
     await liff.init({ liffId: inLiffId });
@@ -209,6 +198,7 @@ async function initLiff(inLiffId) {
   }
 }
 
+/** 勤務実績入力ページ初期化 */
 async function setupAttendancePage() {
   const datePicker = getEl("datePicker");
   const workForm = getEl("workForm");
@@ -237,6 +227,7 @@ async function setupAttendancePage() {
   workForm.addEventListener("submit", handleAttendanceSubmit);
 }
 
+/** 勤務場所取得 */
 async function fetchShift(selectedDate) {
   const display = getEl("locationDisplay");
   if (!display) return;
@@ -256,6 +247,7 @@ async function fetchShift(selectedDate) {
   }
 }
 
+/** 勤務実績送信 */
 async function handleAttendanceSubmit(e) {
   e.preventDefault();
 
@@ -310,12 +302,13 @@ async function handleAttendanceSubmit(e) {
   }
 }
 
+/** 区分値取得 */
 async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   const selectEl = getEl(selectId);
   if (!selectEl) return;
 
   try {
-    const dataList = await apiGetKubun(kubunType);
+    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
     selectEl.innerHTML = "";
 
     if (addDefault) {
@@ -337,12 +330,13 @@ async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   }
 }
 
+/** 獲得項目取得 */
 async function setupWorkItemList(kubunType) {
   const container = getEl("workItemList");
   if (!container) return;
 
   try {
-    const dataList = await apiGetKubun(kubunType);
+    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
     container.innerHTML = "";
 
     dataList.forEach((item) => {
@@ -385,6 +379,7 @@ function getSelectedItems() {
   }));
 }
 
+/** スタッフ情報入力ページ初期化 */
 async function setupProfilePage() {
   const staffForm = getEl("staffForm");
   if (!staffForm) return;
@@ -401,6 +396,7 @@ async function setupProfilePage() {
   staffForm.addEventListener("submit", handleProfileSubmit);
 }
 
+/** スタッフ情報送信 */
 async function handleProfileSubmit(e) {
   e.preventDefault();
 
@@ -444,6 +440,7 @@ async function handleProfileSubmit(e) {
   }
 }
 
+/** モーダル表示 */
 const showModal = (message) => {
   return new Promise((resolve) => {
     const modalElem = document.getElementById('statusModal');
