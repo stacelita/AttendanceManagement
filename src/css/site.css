@@ -39,6 +39,11 @@ body {
     transform: translateY(-1px);
 }
 
+.form-control::placeholder {
+  color: #ccc;
+  opacity: 1;
+}
+
 #overlay {
     position: fixed;
     top: 0;

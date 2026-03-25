@@ -65,7 +65,16 @@
             </form>
         </div>
     </div>
-
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <p id="modalMessage" class="mb-4"></p>
+                <button type="button" class="btn btn-primary w-100" id="modalConfirmBtn">OK</button>
+            </div>
+            </div>
+        </div>
+    </div>
     <script>
         // LIFF初期化や送信処理をここに記述
         setupProfilePage();
