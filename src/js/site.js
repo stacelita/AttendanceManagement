@@ -9,10 +9,12 @@ const ACTION = {
   PROFILE: "profile",
 };
 
+/** idによるHTML要素取得 */
 function getEl(id) {
   return document.getElementById(id);
 }
 
+/** オーバレイ設定 */
 function setOverlay(visible, text) {
   const overlay = getEl("overlay");
   const overlayText = getEl("overlayText");
@@ -21,6 +23,7 @@ function setOverlay(visible, text) {
   overlay.style.display = visible ? "flex" : "none";
 }
 
+/** ページ読み込み失敗 */
 function showPageInitError(message) {
   const overlayText = getEl("overlayText");
   if (overlayText) overlayText.textContent = message;
@@ -34,6 +37,7 @@ function parseJsonSafe(text) {
   }
 }
 
+/** apipostリクエスト */
 async function apiPost(payload) {
   const response = await fetch(GAS_URL, {
     method: "POST",
@@ -52,6 +56,7 @@ async function apiPost(payload) {
   return data;
 }
 
+/** apigetリクエスト */
 async function apiGet(action, params) {
   const search = new URLSearchParams();
   search.set("action", action);
@@ -74,42 +79,6 @@ async function apiGet(action, params) {
     throw new Error(detail);
   }
   return data;
-}
-
-async function apiPostOrFallbackGet(payload) {
-  try {
-    return await apiPost(payload);
-  } catch (postError) {
-    console.warn("POST失敗のためGETへフォールバック:", postError);
-    const { action, items, ...rest } = payload || {};
-    const queryParams = { ...rest };
-    if (items !== undefined) queryParams.items = JSON.stringify(items);
-    return await apiGet(action, queryParams);
-  }
-}
-
-async function apiGetKubun(kubunType) {
-  const url = `${GAS_URL}?action=${ACTION.GET_KUBUN}&kubunType=${encodeURIComponent(kubunType)}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("区分データの取得に失敗しました。");
-  }
-  return response.json();
-}
-
-function getMissingRequiredValues(formData, requiredKeys) {
-  return requiredKeys.filter((key) => {
-    const value = formData[key];
-    return value === undefined || value === null || String(value).trim() === "";
-  });
-}
-
-function validateAttendanceForm(formData) {
-  const required = ["date", "categoryValue"];
-  const missing = getMissingRequiredValues(formData, required);
-  if (missing.length > 0) {
-    throw new Error("必須項目を入力してください。");
-  }
 }
 
 function scrollToAndFocus(el) {
@@ -155,78 +124,9 @@ function scrollToAndFocus(el) {
   } catch {
     // 無視
   }
-
 }
 
-function validateAttendanceRequiredUI() {
-  const dateEl = getEl("datePicker");
-  const categoryEl = getEl("workCategory");
-
-  if (dateEl && !dateEl.checkValidity()) {
-    // ブラウザのrequiredメッセージが出るように reportValidity を呼ぶ
-    scrollToAndFocus(dateEl);
-    // スクロール反映のタイミングズレ対策
-    setTimeout(() => dateEl.reportValidity(), 100);
-    return false;
-  }
-
-  // workCategory は select なので value で判定（デフォルトは "" の想定）
-  if (categoryEl && !categoryEl.checkValidity()) {
-    scrollToAndFocus(categoryEl);
-    setTimeout(() => categoryEl.reportValidity(), 100);
-    return false;
-  }
-
-  return true;
-}
-
-function validateProfileForm(formData) {
-  const required = ["userName", "userKana", "birthDate", "station", "tel"];
-  const missing = getMissingRequiredValues(formData, required);
-  if (missing.length > 0) {
-    throw new Error("必須項目を入力してください。");
-  }
-}
-
-function validateProfileRequiredUI() {
-  const userNameEl = getEl("userName");
-  if (userNameEl && !userNameEl.checkValidity()) {
-    scrollToAndFocus(userNameEl);
-    setTimeout(() => userNameEl.reportValidity(), 100);
-    return false;
-  }
-
-  const userKanaEl = getEl("userKana");
-  if (userKanaEl && !userKanaEl.checkValidity()) {
-    scrollToAndFocus(userKanaEl);
-    setTimeout(() => userKanaEl.reportValidity(), 100);
-    return false;
-  }
-
-  const birthDateEl = getEl("birthDate");
-  if (birthDateEl && !birthDateEl.checkValidity()) {
-    scrollToAndFocus(birthDateEl);
-    setTimeout(() => birthDateEl.reportValidity(), 100);
-    return false;
-  }
-
-  const stationEl = getEl("station");
-  if (stationEl && !stationEl.checkValidity()) {
-    scrollToAndFocus(stationEl);
-    setTimeout(() => stationEl.reportValidity(), 100);
-    return false;
-  }
-
-  const telEl = getEl("tel");
-  if (telEl && !telEl.checkValidity()) {
-    scrollToAndFocus(telEl);
-    setTimeout(() => telEl.reportValidity(), 100);
-    return false;
-  }
-
-  return true;
-}
-
+/** liff初期化処理 */
 async function initLiff(inLiffId) {
   try {
     await liff.init({ liffId: inLiffId });
@@ -241,6 +141,7 @@ async function initLiff(inLiffId) {
   }
 }
 
+/** 勤務実績入力ページ初期化 */
 async function setupAttendancePage() {
   const datePicker = getEl("datePicker");
   const workForm = getEl("workForm");
@@ -269,25 +170,7 @@ async function setupAttendancePage() {
   workForm.addEventListener("submit", handleAttendanceSubmit);
 }
 
-async function fetchShift(selectedDate) {
-  const display = getEl("locationDisplay");
-  if (!display) return;
-  display.innerText = "読み込み中...";
-
-  try {
-    const profile = await liff.getProfile();
-    // shift_search は読み取りなので GET に寄せてCORS影響を減らす
-    const data = await apiGet(ACTION.SHIFT_SEARCH, {
-      userId: profile.userId,
-      targetDate: selectedDate,
-    });
-    display.innerText = data && data.location ? data.location : "シフトなし";
-  } catch (error) {
-    console.error("シフト取得エラー:", error);
-    display.innerText = "エラー";
-  }
-}
-
+/** 勤務実績送信 */
 async function handleAttendanceSubmit(e) {
   e.preventDefault();
 
@@ -314,8 +197,7 @@ async function handleAttendanceSubmit(e) {
       memo: getEl("memo").value.trim(),
     };
 
-    validateAttendanceForm(formData);
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     const itemsText = selectedItems.length > 0
       ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
@@ -343,12 +225,56 @@ async function handleAttendanceSubmit(e) {
   }
 }
 
+/** 勤務実績フォーム検証 */
+function validateAttendanceRequiredUI() {
+  const dateEl = getEl("datePicker");
+  const categoryEl = getEl("workCategory");
+
+  if (dateEl && !dateEl.checkValidity()) {
+    // ブラウザのrequiredメッセージが出るように reportValidity を呼ぶ
+    scrollToAndFocus(dateEl);
+    // スクロール反映のタイミングズレ対策
+    setTimeout(() => dateEl.reportValidity(), 100);
+    return false;
+  }
+
+  // workCategory は select なので value で判定（デフォルトは "" の想定）
+  if (categoryEl && !categoryEl.checkValidity()) {
+    scrollToAndFocus(categoryEl);
+    setTimeout(() => categoryEl.reportValidity(), 100);
+    return false;
+  }
+
+  return true;
+}
+
+/** 勤務場所取得処理 */
+async function fetchShift(selectedDate) {
+  const display = getEl("locationDisplay");
+  if (!display) return;
+  display.innerText = "読み込み中...";
+
+  try {
+    const profile = await liff.getProfile();
+    // shift_search は読み取りなので GET に寄せてCORS影響を減らす
+    const data = await apiGet(ACTION.SHIFT_SEARCH, {
+      userId: profile.userId,
+      targetDate: selectedDate,
+    });
+    display.innerText = data && data.location ? data.location : "シフトなし";
+  } catch (error) {
+    console.error("シフト取得エラー:", error);
+    display.innerText = "エラー";
+  }
+}
+
+/** 区分値取得 */
 async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   const selectEl = getEl(selectId);
   if (!selectEl) return;
 
   try {
-    const dataList = await apiGetKubun(kubunType);
+    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
     selectEl.innerHTML = "";
 
     if (addDefault) {
@@ -370,12 +296,13 @@ async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   }
 }
 
+/** 獲得項目設定 */
 async function setupWorkItemList(kubunType) {
   const container = getEl("workItemList");
   if (!container) return;
 
   try {
-    const dataList = await apiGetKubun(kubunType);
+    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
     container.innerHTML = "";
 
     dataList.forEach((item) => {
@@ -418,6 +345,7 @@ function getSelectedItems() {
   }));
 }
 
+/** スタッフ情報入力ページ初期化 */
 async function setupProfilePage() {
   const staffForm = getEl("staffForm");
   if (!staffForm) return;
@@ -434,6 +362,7 @@ async function setupProfilePage() {
   staffForm.addEventListener("submit", handleProfileSubmit);
 }
 
+/** スタッフ情報送信 */
 async function handleProfileSubmit(e) {
   e.preventDefault();
 
@@ -455,8 +384,7 @@ async function handleProfileSubmit(e) {
       tel: getEl("tel").value.trim(),
     };
 
-    validateProfileForm(formData);
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     if (liff.isInClient()) {
       await liff.sendMessages([{
@@ -478,6 +406,47 @@ async function handleProfileSubmit(e) {
   }
 }
 
+/** スタッフ情報フォーム検証 */
+function validateProfileRequiredUI() {
+  const userNameEl = getEl("userName");
+  if (userNameEl && !userNameEl.checkValidity()) {
+    scrollToAndFocus(userNameEl);
+    setTimeout(() => userNameEl.reportValidity(), 100);
+    return false;
+  }
+
+  const userKanaEl = getEl("userKana");
+  if (userKanaEl && !userKanaEl.checkValidity()) {
+    scrollToAndFocus(userKanaEl);
+    setTimeout(() => userKanaEl.reportValidity(), 100);
+    return false;
+  }
+
+  const birthDateEl = getEl("birthDate");
+  if (birthDateEl && !birthDateEl.checkValidity()) {
+    scrollToAndFocus(birthDateEl);
+    setTimeout(() => birthDateEl.reportValidity(), 100);
+    return false;
+  }
+
+  const stationEl = getEl("station");
+  if (stationEl && !stationEl.checkValidity()) {
+    scrollToAndFocus(stationEl);
+    setTimeout(() => stationEl.reportValidity(), 100);
+    return false;
+  }
+
+  const telEl = getEl("tel");
+  if (telEl && !telEl.checkValidity()) {
+    scrollToAndFocus(telEl);
+    setTimeout(() => telEl.reportValidity(), 100);
+    return false;
+  }
+
+  return true;
+}
+
+/** モーダル表示(アラートの代わり) */
 const showModal = (message) => {
   return new Promise((resolve) => {
     const modalElem = document.getElementById('statusModal');
