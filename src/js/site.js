@@ -418,7 +418,7 @@ async function handleProfileSubmit(e) {
       tel: getEl("tel").value.trim(),
     };
 
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     if (liff.isInClient()) {
       await liff.sendMessages([{
