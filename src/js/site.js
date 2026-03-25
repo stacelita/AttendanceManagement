@@ -1,302 +1,337 @@
-const LIFF_ID_ARCHIVE = '2008956543-HV2ZIzKe';
-const LIFF_ID_PROFILE = '2008956543-MaLNj6aF';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyKD_Su-tKQNM9U07-2S3I1yvBn-9bAKFABzwSTeckViKFomaP_Zm0K0L_EsYf_bSDSvg/exec';
+const LIFF_ID_ARCHIVE = "2008956543-HV2ZIzKe";
+const LIFF_ID_PROFILE = "2008956543-MaLNj6aF";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyKD_Su-tKQNM9U07-2S3I1yvBn-9bAKFABzwSTeckViKFomaP_Zm0K0L_EsYf_bSDSvg/exec";
 
-// LIFF初期化（どのページでも最初に呼ぶ）
+const ACTION = {
+  SHIFT_SEARCH: "shift_search",
+  GET_KUBUN: "get_kubun",
+  ACHIEVE: "achieve",
+  PROFILE: "profile",
+};
+
+function getEl(id) {
+  return document.getElementById(id);
+}
+
+function setOverlay(visible, text) {
+  const overlay = getEl("overlay");
+  const overlayText = getEl("overlayText");
+  if (!overlay || !overlayText) return;
+  if (text) overlayText.textContent = text;
+  overlay.style.display = visible ? "flex" : "none";
+}
+
+function showPageInitError(message) {
+  const overlayText = getEl("overlayText");
+  if (overlayText) overlayText.textContent = message;
+}
+
+function parseJsonSafe(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+async function apiPost(payload) {
+  const response = await fetch(GAS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  const data = parseJsonSafe(text);
+  if (!response.ok) {
+    throw new Error("APIリクエストに失敗しました。");
+  }
+  if (data && data.status === "error") {
+    const detail = data.message || "サーバーエラー";
+    throw new Error(detail);
+  }
+  return data;
+}
+
+async function apiGetKubun(kubunType) {
+  const url = `${GAS_URL}?action=${ACTION.GET_KUBUN}&kubunType=${encodeURIComponent(kubunType)}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("区分データの取得に失敗しました。");
+  }
+  return response.json();
+}
+
+function getMissingRequiredValues(formData, requiredKeys) {
+  return requiredKeys.filter((key) => {
+    const value = formData[key];
+    return value === undefined || value === null || String(value).trim() === "";
+  });
+}
+
+function validateAttendanceForm(formData) {
+  const required = ["date", "categoryValue"];
+  const missing = getMissingRequiredValues(formData, required);
+  if (missing.length > 0) {
+    throw new Error("必須項目を入力してください。");
+  }
+}
+
+function validateProfileForm(formData) {
+  const required = ["userName", "userKana", "birthDate", "station", "tel"];
+  const missing = getMissingRequiredValues(formData, required);
+  if (missing.length > 0) {
+    throw new Error("必須項目を入力してください。");
+  }
+}
+
 async function initLiff(inLiffId) {
-    try {
-        await liff.init({ liffId: inLiffId });
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error('LIFF初期化失敗', error);
-        return false;
+  try {
+    await liff.init({ liffId: inLiffId });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return false;
     }
+    return true;
+  } catch (error) {
+    console.error("LIFF初期化失敗", error);
+    return false;
+  }
 }
 
-// 勤怠ページ専用の初期化処理
 async function setupAttendancePage() {
-    const overlay = document.getElementById('overlay');
-    const overlayText = document.getElementById('overlayText');
+  const datePicker = getEl("datePicker");
+  const workForm = getEl("workForm");
+  if (!datePicker || !workForm) return;
 
-    try {
-        const isInit = await initLiff(LIFF_ID_ARCHIVE);
-        if (!isInit) return;
+  try {
+    const isInit = await initLiff(LIFF_ID_ARCHIVE);
+    if (!isInit) return;
 
-        // 日付セット
-        const datePicker = document.getElementById('datePicker');
-        const today = new Date().toLocaleDateString('sv-SE');
-        datePicker.value = today;
+    const today = new Date().toLocaleDateString("sv-SE");
+    datePicker.value = today;
 
-        // 【重要】全ての非同期処理（シフト・プルダウン2つ）を並列で実行し、完了を待つ
-        await Promise.all([
-            fetchShift(today),
-            setupKubunDropdown('workCategory', '1'),
-            //setupKubunDropdown('workItem', '2', false)
-            setupWorkItemList(2)
-        ]);
+    await Promise.all([
+      fetchShift(today),
+      setupKubunDropdown("workCategory", "1"),
+      setupWorkItemList("2"),
+    ]);
 
-        // 全て終わったらオーバーレイを隠す
-        overlay.style.setProperty('display', 'none', 'important');
+    setOverlay(false);
+  } catch (error) {
+    console.error("初期化エラー:", error);
+    showPageInitError("読み込みに失敗しました。再読み込みしてください。");
+  }
 
-    } catch (error) {
-        console.error("初期化エラー:", error);
-        overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
-        // エラー時はあえて消さない、またはアラートを出すなどの処理
-    }
-
-    // イベントリスナー登録
-    datePicker.addEventListener('change', (e) => fetchShift(e.target.value));
-    document.getElementById('workForm').addEventListener('submit', handleAttendanceSubmit);
+  datePicker.addEventListener("change", (e) => fetchShift(e.target.value));
+  workForm.addEventListener("submit", handleAttendanceSubmit);
 }
 
-// GASからシフトを取得する関数（単独でも呼べるように外に出しておく）
 async function fetchShift(selectedDate) {
-    const display = document.getElementById('locationDisplay');
-    display.innerText = "読み込み中...";
-    try {
-        const profile = await liff.getProfile();
-        const response = await fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "shift_search", userId: profile.userId, targetDate: selectedDate })
-        });
-        const data = await response.json();
-        display.innerText = data.location;
-    } catch (e) { display.innerText = "エラー"; }
+  const display = getEl("locationDisplay");
+  if (!display) return;
+  display.innerText = "読み込み中...";
+
+  try {
+    const profile = await liff.getProfile();
+    const data = await apiPost({
+      action: ACTION.SHIFT_SEARCH,
+      userId: profile.userId,
+      targetDate: selectedDate,
+    });
+    display.innerText = data && data.location ? data.location : "シフトなし";
+  } catch (error) {
+    console.error("シフト取得エラー:", error);
+    display.innerText = "エラー";
+  }
 }
 
 async function handleAttendanceSubmit(e) {
-    e.preventDefault();
-    const overlay = document.getElementById('overlay');
-    document.getElementById('overlayText').textContent = "送信中...";
-    overlay.style.display = 'flex';
+  e.preventDefault();
 
-    try {
-        const profile = await liff.getProfile();
-        
-        // --- プルダウンの「テキスト（区分名）」を取得する ---
-        const categorySelect = document.getElementById('workCategory');
-        const categoryName = categorySelect.options[categorySelect.selectedIndex].text;
-        const categoryValue = categorySelect.value;
-        
-        // --- 獲得項目（リスト形式・複数選択）の取得 ---
-        const selectedItems = getSelectedItems(); // さきほど作成した関数
-        
-        // 獲得項目を「項目A: 2, 項目B: 1」のような表示用テキストにする
-        const itemsText = selectedItems.length > 0 
-            ? selectedItems.map(item => `${item.name}: ${item.count}`).join('\n') 
-            : 'なし';
-        
-        const formData = {
-            action: "achieve",
-            userId: profile.userId,
-            userName: profile.displayName,
-            date: document.getElementById('datePicker').value,
-            categoryValue: categoryValue,
-            items: selectedItems,
-            uniqueProducts: document.getElementById('uniqueProducts').value,
-            memo: document.getElementById('memo').value
-        };
+  const form = getEl("workForm");
+  if (form && !form.reportValidity()) return;
 
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(formData)
-        });
+  setOverlay(true, "送信中...");
 
-        if (liff.isInClient()) {
-            await liff.sendMessages([{
-                type: 'text',
-                text: `【勤務実績登録】\n` +
-                      `日付：${formData.date}\n` +
-                      `稼働内容：${categoryName}\n` +
-                      `--- 獲得項目 ---\n` +
-                      `${itemsText}\n` +
-                      `----------------\n` +
-                      `独自商材：${formData.uniqueProducts}\n` +
-                      `備考：${formData.memo || 'なし'}`
-            }]);
-        }
-        alert('送信完了！');
-        liff.closeWindow();
-    } catch (error) {
-        alert('エラーが発生しました。');
-        overlay.style.display = 'none';
-    } finally {
-        // 成功しても失敗しても最後は隠す
-        overlay.style.display = 'none';
+  try {
+    const profile = await liff.getProfile();
+    const categorySelect = getEl("workCategory");
+    const selectedItems = getSelectedItems();
+    const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || "";
+
+    const formData = {
+      action: ACTION.ACHIEVE,
+      userId: profile.userId,
+      userName: profile.displayName,
+      date: getEl("datePicker").value,
+      categoryValue: categorySelect.value,
+      items: selectedItems,
+      uniqueProducts: getEl("uniqueProducts").value.trim(),
+      memo: getEl("memo").value.trim(),
+    };
+
+    validateAttendanceForm(formData);
+    await apiPost(formData);
+
+    const itemsText = selectedItems.length > 0
+      ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
+      : "なし";
+
+    if (liff.isInClient()) {
+      await liff.sendMessages([{
+        type: "text",
+        text: `【勤務実績登録】\n` +
+          `日付：${formData.date}\n` +
+          `稼働内容：${categoryName}\n` +
+          `--- 獲得項目 ---\n` +
+          `${itemsText}\n` +
+          `----------------\n` +
+          `独自商材：${formData.uniqueProducts || "なし"}\n` +
+          `備考：${formData.memo || "なし"}`,
+      }]);
     }
+
+    alert("送信完了！");
+    liff.closeWindow();
+  } catch (error) {
+    alert(error.message || "エラーが発生しました。");
+  } finally {
+    setOverlay(false);
+  }
 }
 
-/**
- * GETリクエストで区分データを取得してプルダウンを生成する
- * @param {*} selectId 
- * @param {*} kubunType 
- * @param {*} addDefault 
- * @returns 
- */
 async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
-    const selectEl = document.getElementById(selectId);
-    if (!selectEl) return;
+  const selectEl = getEl(selectId);
+  if (!selectEl) return;
 
-    try {
-        // URLパラメータを構築
-        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;  
-        const response = await fetch(url);
-        const dataList = await response.json();
+  try {
+    const dataList = await apiGetKubun(kubunType);
+    selectEl.innerHTML = "";
 
-        // addDefaultがtrueの場合のみデフォルト項目を追加
-        if (addDefault) {
-            const defaultOption = document.createElement('option');
-            defaultOption.value = "";
-            defaultOption.textContent = "選択してください";
-            selectEl.appendChild(defaultOption);
-        }
-
-        dataList.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.value;
-            option.textContent = item.name;
-            selectEl.appendChild(option);
-        });
-    } catch (error) {
-        console.error("区分データ取得エラー:", error);
+    if (addDefault) {
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = "選択してください";
+      selectEl.appendChild(defaultOption);
     }
+
+    dataList.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = item.name;
+      selectEl.appendChild(option);
+    });
+  } catch (error) {
+    console.error("区分データ取得エラー:", error);
+    throw error;
+  }
 }
 
-/**
- * 獲得項目をリスト形式で生成（個数選択付き）
- */
 async function setupWorkItemList(kubunType) {
-    const container = document.getElementById('workItemList');
-    if (!container) return;
+  const container = getEl("workItemList");
+  if (!container) return;
 
-    try {
-        const url = `${GAS_URL}?action=get_kubun&kubunType=${kubunType}`;
-        const response = await fetch(url);
-        const dataList = await response.json();
+  try {
+    const dataList = await apiGetKubun(kubunType);
+    container.innerHTML = "";
 
-        container.innerHTML = ''; // クリア
+    dataList.forEach((item) => {
+      const div = document.createElement("div");
+      div.className = "list-group-item d-flex justify-content-between align-items-center py-3";
 
-        dataList.forEach(item => {
-            // 1行分のラッパー
-            const div = document.createElement('div');
-            div.className = "list-group-item d-flex justify-content-between align-items-center py-3";
-            
-            // 項目名
-            const nameSpan = document.createElement('span');
-            nameSpan.className = "fw-bold text-secondary";
-            nameSpan.textContent = item.name;
-            
-            // 数字プルダウン (0〜10まで選択可能にする例)
-            const select = document.createElement('select');
-            select.className = "form-select form-select-sm w-auto item-count-select";
-            select.dataset.itemId = item.value; // IDを保持
-            select.dataset.itemName = item.name; // 名前も保持しておくと便利
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "fw-bold text-secondary";
+      nameSpan.textContent = item.name;
 
-            for (let i = 0; i <= 10; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = i;
-                select.appendChild(opt);
-            }
+      const select = document.createElement("select");
+      select.className = "form-select form-select-sm w-auto item-count-select";
+      select.dataset.itemId = item.value;
+      select.dataset.itemName = item.name;
 
-            div.appendChild(nameSpan);
-            div.appendChild(select);
-            container.appendChild(div);
-        });
-    } catch (error) {
-        console.error("獲得項目リスト取得エラー:", error);
-        container.innerHTML = '<div class="list-group-item text-danger">データの取得に失敗しました</div>';
-    }
+      for (let i = 0; i <= 10; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        select.appendChild(opt);
+      }
+
+      div.appendChild(nameSpan);
+      div.appendChild(select);
+      container.appendChild(div);
+    });
+  } catch (error) {
+    console.error("獲得項目リスト取得エラー:", error);
+    container.innerHTML = '<div class="list-group-item text-danger">データの取得に失敗しました</div>';
+    throw error;
+  }
 }
 
 function getSelectedItems() {
-    const selects = document.querySelectorAll('.item-count-select');
-    const results = [];
-    
-    selects.forEach(select => {
-        const count = parseInt(select.value);
-        results.push({
-            id: select.dataset.itemId,
-            name: select.dataset.itemName,
-            count: count
-        });
-    });
-    return results; // これをGASに送るオブジェクトに含める
+  const selects = document.querySelectorAll(".item-count-select");
+  return Array.from(selects).map((select) => ({
+    id: select.dataset.itemId,
+    name: select.dataset.itemName,
+    count: Number(select.value),
+  }));
 }
 
-// 勤怠ページ専用の初期化処理
 async function setupProfilePage() {
-    const overlay = document.getElementById('overlay');
-    const overlayText = document.getElementById('overlayText');
+  const staffForm = getEl("staffForm");
+  if (!staffForm) return;
 
-    try {
-        const isInit = await initLiff(LIFF_ID_PROFILE);
-        if (!isInit) return;
+  try {
+    const isInit = await initLiff(LIFF_ID_PROFILE);
+    if (!isInit) return;
+    setOverlay(false);
+  } catch (error) {
+    console.error("初期化エラー:", error);
+    showPageInitError("読み込みに失敗しました。再読み込みしてください。");
+  }
 
-        // 全て終わったらオーバーレイを隠す
-        overlay.style.setProperty('display', 'none', 'important');
-
-    } catch (error) {
-        console.error("初期化エラー:", error);
-        overlayText.textContent = "読み込みに失敗しました。再読み込みしてください。";
-        // エラー時はあえて消さない、またはアラートを出すなどの処理
-    }
-    document.getElementById('staffForm').addEventListener('submit', handleProfilebmit);
+  staffForm.addEventListener("submit", handleProfileSubmit);
 }
 
-/**
- * 
- * @param {*} e 
- */
-async function handleProfilebmit(e) {
-    e.preventDefault();
-    const overlay = document.getElementById('overlay');
-    document.getElementById('overlayText').textContent = "送信中...";
-    overlay.style.display = 'flex';
+async function handleProfileSubmit(e) {
+  e.preventDefault();
 
-    try {
-        const profile = await liff.getProfile();
- 
-        const formData = {
-            action: "profile",
-            userId: profile.userId,
-            displayName: profile.displayName,
-            userName: document.getElementById('userName').value,
-            userKana: document.getElementById('userKana').value,
-            birthDate: document.getElementById('birthDate').value,
-            station: document.getElementById('station').value,
-            tel: document.getElementById('tel').value,
-        };
+  const form = getEl("staffForm");
+  if (form && !form.reportValidity()) return;
 
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(formData)
-        });
+  setOverlay(true, "送信中...");
 
-        if (liff.isInClient()) {
-            await liff.sendMessages([{
-                type: 'text',
-                text: `【スタッフ情報登録】\n` +
-                      `氏名：${formData.userName}\n` +
-                      `フリガナ：${formData.userKana}\n` +
-                      `生年月日：${formData.birthDate}\n` +
-                      `最寄り駅：${formData.station}\n` +
-                      `電話番号：${formData.tel}`
-            }]);
-        }
-        alert('送信完了！');
-        liff.closeWindow();
-    } catch (error) {
-        alert('エラーが発生しました。');
-        overlay.style.display = 'none';
-    } finally {
-        // 成功しても失敗しても最後は隠す
-        overlay.style.display = 'none';
+  try {
+    const profile = await liff.getProfile();
+    const formData = {
+      action: ACTION.PROFILE,
+      userId: profile.userId,
+      displayName: profile.displayName,
+      userName: getEl("userName").value.trim(),
+      userKana: getEl("userKana").value.trim(),
+      birthDate: getEl("birthDate").value,
+      station: getEl("station").value.trim(),
+      tel: getEl("tel").value.trim(),
+    };
+
+    validateProfileForm(formData);
+    await apiPost(formData);
+
+    if (liff.isInClient()) {
+      await liff.sendMessages([{
+        type: "text",
+        text: `【スタッフ情報登録】\n` +
+          `氏名：${formData.userName}\n` +
+          `フリガナ：${formData.userKana}\n` +
+          `生年月日：${formData.birthDate}\n` +
+          `最寄り駅：${formData.station}\n` +
+          `電話番号：${formData.tel}`,
+      }]);
     }
+
+    alert("送信完了！");
+    liff.closeWindow();
+  } catch (error) {
+    alert(error.message || "エラーが発生しました。");
+  } finally {
+    setOverlay(false);
+  }
 }
