@@ -97,21 +97,6 @@ async function apiGetKubun(kubunType) {
   return response.json();
 }
 
-function getMissingRequiredValues(formData, requiredKeys) {
-  return requiredKeys.filter((key) => {
-    const value = formData[key];
-    return value === undefined || value === null || String(value).trim() === "";
-  });
-}
-
-function validateAttendanceForm(formData) {
-  const required = ["date", "categoryValue"];
-  const missing = getMissingRequiredValues(formData, required);
-  if (missing.length > 0) {
-    throw new Error("必須項目を入力してください。");
-  }
-}
-
 function scrollToAndFocus(el) {
   if (!el) return;
 
@@ -178,14 +163,6 @@ function validateAttendanceRequiredUI() {
   }
 
   return true;
-}
-
-function validateProfileForm(formData) {
-  const required = ["userName", "userKana", "birthDate", "station", "tel"];
-  const missing = getMissingRequiredValues(formData, required);
-  if (missing.length > 0) {
-    throw new Error("必須項目を入力してください。");
-  }
 }
 
 function validateProfileRequiredUI() {
@@ -314,7 +291,7 @@ async function handleAttendanceSubmit(e) {
       memo: getEl("memo").value.trim(),
     };
 
-    await apiPost(formData);
+    await apiPostOrFallbackGet(formData);
 
     const itemsText = selectedItems.length > 0
       ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
@@ -454,7 +431,7 @@ async function handleProfileSubmit(e) {
       tel: getEl("tel").value.trim(),
     };
 
-    await apiPost(formData);
+    await apiPostOrFallbackGet(formData);
 
     if (liff.isInClient()) {
       await liff.sendMessages([{
