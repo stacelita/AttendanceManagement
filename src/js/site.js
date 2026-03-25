@@ -115,10 +115,21 @@ function validateAttendanceForm(formData) {
 function scrollToAndFocus(el) {
   if (!el) return;
   try {
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // モバイル環境だと smooth が効かない/効きにくいことがあるため auto を優先
+    el.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
   } catch {
     // scrollIntoView が利用できない環境向けのフォールバック
-    el.scrollIntoView();
+    el.scrollIntoView(false);
+  }
+
+  // 追加フォールバック：window.scrollTo で確実に移動
+  try {
+    const rect = el.getBoundingClientRect();
+    const offsetTop = (window.pageYOffset || document.documentElement.scrollTop || 0) + rect.top;
+    const y = Math.max(0, offsetTop - 20);
+    window.scrollTo({ top: y, behavior: "auto" });
+  } catch {
+    // 無視
   }
   try {
     el.focus();
@@ -134,14 +145,15 @@ function validateAttendanceRequiredUI() {
   if (dateEl && !dateEl.checkValidity()) {
     // ブラウザのrequiredメッセージが出るように reportValidity を呼ぶ
     scrollToAndFocus(dateEl);
-    dateEl.reportValidity();
+    // スクロール反映のタイミングズレ対策
+    setTimeout(() => dateEl.reportValidity(), 0);
     return false;
   }
 
   // workCategory は select なので value で判定（デフォルトは "" の想定）
   if (categoryEl && !categoryEl.checkValidity()) {
     scrollToAndFocus(categoryEl);
-    categoryEl.reportValidity();
+    setTimeout(() => categoryEl.reportValidity(), 0);
     return false;
   }
 
@@ -160,35 +172,35 @@ function validateProfileRequiredUI() {
   const userNameEl = getEl("userName");
   if (userNameEl && !userNameEl.checkValidity()) {
     scrollToAndFocus(userNameEl);
-    userNameEl.reportValidity();
+    setTimeout(() => userNameEl.reportValidity(), 0);
     return false;
   }
 
   const userKanaEl = getEl("userKana");
   if (userKanaEl && !userKanaEl.checkValidity()) {
     scrollToAndFocus(userKanaEl);
-    userKanaEl.reportValidity();
+    setTimeout(() => userKanaEl.reportValidity(), 0);
     return false;
   }
 
   const birthDateEl = getEl("birthDate");
   if (birthDateEl && !birthDateEl.checkValidity()) {
     scrollToAndFocus(birthDateEl);
-    birthDateEl.reportValidity();
+    setTimeout(() => birthDateEl.reportValidity(), 0);
     return false;
   }
 
   const stationEl = getEl("station");
   if (stationEl && !stationEl.checkValidity()) {
     scrollToAndFocus(stationEl);
-    stationEl.reportValidity();
+    setTimeout(() => stationEl.reportValidity(), 0);
     return false;
   }
 
   const telEl = getEl("tel");
   if (telEl && !telEl.checkValidity()) {
     scrollToAndFocus(telEl);
-    telEl.reportValidity();
+    setTimeout(() => telEl.reportValidity(), 0);
     return false;
   }
 
