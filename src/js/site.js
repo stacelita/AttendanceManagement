@@ -112,12 +112,71 @@ function validateAttendanceForm(formData) {
   }
 }
 
+function validateAttendanceRequiredUI() {
+  const dateEl = getEl("datePicker");
+  const categoryEl = getEl("workCategory");
+
+  if (dateEl && String(dateEl.value || "").trim() === "") {
+    alert("日付を入力してください。");
+    dateEl.focus();
+    return false;
+  }
+
+  // workCategory は select なので value で判定（デフォルトは "" の想定）
+  if (categoryEl && String(categoryEl.value || "").trim() === "") {
+    alert("稼働内容を選択してください。");
+    categoryEl.focus();
+    return false;
+  }
+
+  return true;
+}
+
 function validateProfileForm(formData) {
   const required = ["userName", "userKana", "birthDate", "station", "tel"];
   const missing = getMissingRequiredValues(formData, required);
   if (missing.length > 0) {
     throw new Error("必須項目を入力してください。");
   }
+}
+
+function validateProfileRequiredUI() {
+  const userNameEl = getEl("userName");
+  if (userNameEl && String(userNameEl.value || "").trim() === "") {
+    alert("氏名を入力してください。");
+    userNameEl.focus();
+    return false;
+  }
+
+  const userKanaEl = getEl("userKana");
+  if (userKanaEl && String(userKanaEl.value || "").trim() === "") {
+    alert("フリガナを入力してください。");
+    userKanaEl.focus();
+    return false;
+  }
+
+  const birthDateEl = getEl("birthDate");
+  if (birthDateEl && String(birthDateEl.value || "").trim() === "") {
+    alert("生年月日を入力してください。");
+    birthDateEl.focus();
+    return false;
+  }
+
+  const stationEl = getEl("station");
+  if (stationEl && String(stationEl.value || "").trim() === "") {
+    alert("最寄り駅を入力してください。");
+    stationEl.focus();
+    return false;
+  }
+
+  const telEl = getEl("tel");
+  if (telEl && String(telEl.value || "").trim() === "") {
+    alert("電話番号を入力してください。");
+    telEl.focus();
+    return false;
+  }
+
+  return true;
 }
 
 async function initLiff(inLiffId) {
@@ -185,7 +244,8 @@ async function handleAttendanceSubmit(e) {
   e.preventDefault();
 
   const form = getEl("workForm");
-  if (form && !form.reportValidity()) return;
+  // ブラウザ標準UIだけだとアラートが出ないため、こちらで必須チェックと通知を行う
+  if (!validateAttendanceRequiredUI()) return;
 
   setOverlay(true, "送信中...");
 
@@ -331,7 +391,7 @@ async function handleProfileSubmit(e) {
   e.preventDefault();
 
   const form = getEl("staffForm");
-  if (form && !form.reportValidity()) return;
+  if (form && !validateProfileRequiredUI()) return;
 
   setOverlay(true, "送信中...");
 
