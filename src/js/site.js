@@ -341,10 +341,10 @@ async function handleAttendanceSubmit(e) {
       }]);
     }
 
-    alert("送信完了！");
+    await showModal("送信完了！");
     liff.closeWindow();
   } catch (error) {
-    alert(error.message || "エラーが発生しました。");
+    await showModal(error.message || "エラーが発生しました。");
   } finally {
     setOverlay(false);
   }
@@ -477,11 +477,32 @@ async function handleProfileSubmit(e) {
       }]);
     }
 
-    alert("送信完了！");
+    await showModal("送信完了！");
     liff.closeWindow();
   } catch (error) {
-    alert(error.message || "エラーが発生しました。");
+    await showModal(error.message || "エラーが発生しました。");
   } finally {
     setOverlay(false);
   }
 }
+
+const showModal = (message) => {
+  return new Promise((resolve) => {
+    const modalElem = document.getElementById('statusModal');
+    // Bootstrapのモーダルインスタンスを作成
+    const modal = new bootstrap.Modal(modalElem);
+    
+    document.getElementById('modalMessage').innerText = message;
+    
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    confirmBtn.onclick = () => {
+      modal.hide();
+      // 完全に閉じてから resolve する（念のため）
+      modalElem.addEventListener('hidden.bs.modal', () => {
+        resolve();
+      }, { once: true });
+    };
+
+    modal.show();
+  });
+};
