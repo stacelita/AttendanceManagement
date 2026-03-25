@@ -38,19 +38,9 @@ async function apiPost(payload) {
   const response = await fetch(GAS_URL, {
     method: "POST",
     mode: 'no-cors',
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const text = await response.text();
-  const data = parseJsonSafe(text);
-  if (!response.ok) {
-    throw new Error("APIリクエストに失敗しました。");
-  }
-  if (data && data.status === "error") {
-    const detail = data.message || "サーバーエラー";
-    throw new Error(detail);
-  }
-  return data;
+  return;
 }
 
 async function apiGet(action, params) {
