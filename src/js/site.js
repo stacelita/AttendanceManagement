@@ -112,20 +112,36 @@ function validateAttendanceForm(formData) {
   }
 }
 
+function scrollToAndFocus(el) {
+  if (!el) return;
+  try {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch {
+    // scrollIntoView が利用できない環境向けのフォールバック
+    el.scrollIntoView();
+  }
+  try {
+    el.focus();
+  } catch {
+    // focusできない場合は無視
+  }
+}
+
 function validateAttendanceRequiredUI() {
   const dateEl = getEl("datePicker");
   const categoryEl = getEl("workCategory");
 
-  if (dateEl && String(dateEl.value || "").trim() === "") {
-    alert("日付を入力してください。");
-    dateEl.focus();
+  if (dateEl && !dateEl.checkValidity()) {
+    // ブラウザのrequiredメッセージが出るように reportValidity を呼ぶ
+    scrollToAndFocus(dateEl);
+    dateEl.reportValidity();
     return false;
   }
 
   // workCategory は select なので value で判定（デフォルトは "" の想定）
-  if (categoryEl && String(categoryEl.value || "").trim() === "") {
-    alert("稼働内容を選択してください。");
-    categoryEl.focus();
+  if (categoryEl && !categoryEl.checkValidity()) {
+    scrollToAndFocus(categoryEl);
+    categoryEl.reportValidity();
     return false;
   }
 
@@ -142,37 +158,37 @@ function validateProfileForm(formData) {
 
 function validateProfileRequiredUI() {
   const userNameEl = getEl("userName");
-  if (userNameEl && String(userNameEl.value || "").trim() === "") {
-    alert("氏名を入力してください。");
-    userNameEl.focus();
+  if (userNameEl && !userNameEl.checkValidity()) {
+    scrollToAndFocus(userNameEl);
+    userNameEl.reportValidity();
     return false;
   }
 
   const userKanaEl = getEl("userKana");
-  if (userKanaEl && String(userKanaEl.value || "").trim() === "") {
-    alert("フリガナを入力してください。");
-    userKanaEl.focus();
+  if (userKanaEl && !userKanaEl.checkValidity()) {
+    scrollToAndFocus(userKanaEl);
+    userKanaEl.reportValidity();
     return false;
   }
 
   const birthDateEl = getEl("birthDate");
-  if (birthDateEl && String(birthDateEl.value || "").trim() === "") {
-    alert("生年月日を入力してください。");
-    birthDateEl.focus();
+  if (birthDateEl && !birthDateEl.checkValidity()) {
+    scrollToAndFocus(birthDateEl);
+    birthDateEl.reportValidity();
     return false;
   }
 
   const stationEl = getEl("station");
-  if (stationEl && String(stationEl.value || "").trim() === "") {
-    alert("最寄り駅を入力してください。");
-    stationEl.focus();
+  if (stationEl && !stationEl.checkValidity()) {
+    scrollToAndFocus(stationEl);
+    stationEl.reportValidity();
     return false;
   }
 
   const telEl = getEl("tel");
-  if (telEl && String(telEl.value || "").trim() === "") {
-    alert("電話番号を入力してください。");
-    telEl.focus();
+  if (telEl && !telEl.checkValidity()) {
+    scrollToAndFocus(telEl);
+    telEl.reportValidity();
     return false;
   }
 
