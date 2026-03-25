@@ -340,11 +340,10 @@ async function handleAttendanceSubmit(e) {
           `備考：${formData.memo || "なし"}`,
       }]);
     }
-    setOverlay(false);
+
     await showModal("送信完了！");
     liff.closeWindow();
   } catch (error) {
-    setOverlay(false);
     await showModal(error.message || "エラーが発生しました。");
   } finally {
     setOverlay(false);
