@@ -52,6 +52,42 @@ async function apiPost(payload) {
   return data;
 }
 
+async function apiGet(action, params) {
+  const search = new URLSearchParams();
+  search.set("action", action);
+  if (params) {
+    Object.keys(params).forEach((key) => {
+      if (params[key] === undefined) return;
+      search.set(key, String(params[key]));
+    });
+  }
+
+  const url = `${GAS_URL}?${search.toString()}`;
+  const response = await fetch(url, { method: "GET" });
+  const text = await response.text();
+  const data = parseJsonSafe(text);
+  if (!response.ok) {
+    throw new Error("API GETリクエストに失敗しました。");
+  }
+  if (data && data.status === "error") {
+    const detail = data.message || "サーバーエラー";
+    throw new Error(detail);
+  }
+  return data;
+}
+
+async function apiPostOrFallbackGet(payload) {
+  try {
+    return await apiPost(payload);
+  } catch (postError) {
+    console.warn("POST失敗のためGETへフォールバック:", postError);
+    const { action, items, ...rest } = payload || {};
+    const queryParams = { ...rest };
+    if (items !== undefined) queryParams.items = JSON.stringify(items);
+    return await apiGet(action, queryParams);
+  }
+}
+
 async function apiGetKubun(kubunType) {
   const url = `${GAS_URL}?action=${ACTION.GET_KUBUN}&kubunType=${encodeURIComponent(kubunType)}`;
   const response = await fetch(url);
@@ -133,8 +169,8 @@ async function fetchShift(selectedDate) {
 
   try {
     const profile = await liff.getProfile();
-    const data = await apiPost({
-      action: ACTION.SHIFT_SEARCH,
+    // shift_search は読み取りなので GET に寄せてCORS影響を減らす
+    const data = await apiGet(ACTION.SHIFT_SEARCH, {
       userId: profile.userId,
       targetDate: selectedDate,
     });
@@ -171,7 +207,7 @@ async function handleAttendanceSubmit(e) {
     };
 
     validateAttendanceForm(formData);
-    await apiPost(formData);
+    await apiPostOrFallbackGet(formData);
 
     const itemsText = selectedItems.length > 0
       ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
@@ -313,7 +349,7 @@ async function handleProfileSubmit(e) {
     };
 
     validateProfileForm(formData);
-    await apiPost(formData);
+    await apiPostOrFallbackGet(formData);
 
     if (liff.isInClient()) {
       await liff.sendMessages([{
