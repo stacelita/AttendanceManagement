@@ -37,6 +37,7 @@ function parseJsonSafe(text) {
 async function apiPost(payload) {
   const response = await fetch(GAS_URL, {
     method: "POST",
+    mode: 'no-cors',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
@@ -291,7 +292,7 @@ async function handleAttendanceSubmit(e) {
       memo: getEl("memo").value.trim(),
     };
 
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     const itemsText = selectedItems.length > 0
       ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
