@@ -346,8 +346,6 @@ async function handleAttendanceSubmit(e) {
   } catch (error) {
     setOverlay(false);
     await showModal(error.message || "エラーが発生しました。");
-  } finally {
-    setOverlay(false);
   }
 }
 
@@ -477,13 +475,12 @@ async function handleProfileSubmit(e) {
           `電話番号：${formData.tel}`,
       }]);
     }
-
+    setOverlay(false);
     await showModal("送信完了！");
     liff.closeWindow();
   } catch (error) {
-    await showModal(error.message || "エラーが発生しました。");
-  } finally {
     setOverlay(false);
+    await showModal(error.message || "エラーが発生しました。");
   }
 }
 
