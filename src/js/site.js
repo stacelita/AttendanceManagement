@@ -114,27 +114,53 @@ function validateAttendanceForm(formData) {
 
 function scrollToAndFocus(el) {
   if (!el) return;
-  try {
-    // モバイル環境だと smooth が効かない/効きにくいことがあるため auto を優先
-    el.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
-  } catch {
-    // scrollIntoView が利用できない環境向けのフォールバック
-    el.scrollIntoView(false);
-  }
 
-  // 追加フォールバック：window.scrollTo で確実に移動
+  // まずスクロール可能な親を探す（LIFF/iframe内で window スクロールが効かないケース対策）
+  const scrollableParent = (() => {
+    let node = el.parentElement;
+    while (node && node !== document.body) {
+      const style = window.getComputedStyle(node);
+      const overflowY = style.overflowY;
+      const isScrollable =
+        (overflowY === "auto" || overflowY === "scroll") &&
+        node.scrollHeight > node.clientHeight;
+      if (isScrollable) return node;
+      node = node.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  })();
+
+  // 可能なら親の scrollTop を直接調整
   try {
-    const rect = el.getBoundingClientRect();
-    const offsetTop = (window.pageYOffset || document.documentElement.scrollTop || 0) + rect.top;
-    const y = Math.max(0, offsetTop - 20);
-    window.scrollTo({ top: y, behavior: "auto" });
+    if (scrollableParent) {
+      // scrollableParent が body/html 以外でも scrollTop が使えるなら使う
+      if (scrollableParent !== document.documentElement) {
+        const elRect = el.getBoundingClientRect();
+        const parentRect = scrollableParent.getBoundingClientRect();
+        const currentTop = elRect.top - parentRect.top;
+        scrollableParent.scrollTop += currentTop - 20;
+      } else {
+        const rect = el.getBoundingClientRect();
+        const y = Math.max(0, (window.pageYOffset || 0) + rect.top - 20);
+        window.scrollTo({ top: y, behavior: "auto" });
+      }
+    }
   } catch {
     // 無視
   }
+
+  // scrollIntoView（最終手段）
+  try {
+    el.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+  } catch {
+    // 無視
+  }
+
+  // focus（できるなら。できない場合でもスクロール自体は効いてほしい）
   try {
     el.focus();
   } catch {
-    // focusできない場合は無視
+    // 無視
   }
 }
 
@@ -146,14 +172,14 @@ function validateAttendanceRequiredUI() {
     // ブラウザのrequiredメッセージが出るように reportValidity を呼ぶ
     scrollToAndFocus(dateEl);
     // スクロール反映のタイミングズレ対策
-    setTimeout(() => dateEl.reportValidity(), 0);
+    setTimeout(() => dateEl.reportValidity(), 100);
     return false;
   }
 
   // workCategory は select なので value で判定（デフォルトは "" の想定）
   if (categoryEl && !categoryEl.checkValidity()) {
     scrollToAndFocus(categoryEl);
-    setTimeout(() => categoryEl.reportValidity(), 0);
+    setTimeout(() => categoryEl.reportValidity(), 100);
     return false;
   }
 
@@ -172,35 +198,35 @@ function validateProfileRequiredUI() {
   const userNameEl = getEl("userName");
   if (userNameEl && !userNameEl.checkValidity()) {
     scrollToAndFocus(userNameEl);
-    setTimeout(() => userNameEl.reportValidity(), 0);
+    setTimeout(() => userNameEl.reportValidity(), 100);
     return false;
   }
 
   const userKanaEl = getEl("userKana");
   if (userKanaEl && !userKanaEl.checkValidity()) {
     scrollToAndFocus(userKanaEl);
-    setTimeout(() => userKanaEl.reportValidity(), 0);
+    setTimeout(() => userKanaEl.reportValidity(), 100);
     return false;
   }
 
   const birthDateEl = getEl("birthDate");
   if (birthDateEl && !birthDateEl.checkValidity()) {
     scrollToAndFocus(birthDateEl);
-    setTimeout(() => birthDateEl.reportValidity(), 0);
+    setTimeout(() => birthDateEl.reportValidity(), 100);
     return false;
   }
 
   const stationEl = getEl("station");
   if (stationEl && !stationEl.checkValidity()) {
     scrollToAndFocus(stationEl);
-    setTimeout(() => stationEl.reportValidity(), 0);
+    setTimeout(() => stationEl.reportValidity(), 100);
     return false;
   }
 
   const telEl = getEl("tel");
   if (telEl && !telEl.checkValidity()) {
     scrollToAndFocus(telEl);
-    setTimeout(() => telEl.reportValidity(), 0);
+    setTimeout(() => telEl.reportValidity(), 100);
     return false;
   }
 
