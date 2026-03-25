@@ -314,8 +314,7 @@ async function handleAttendanceSubmit(e) {
       memo: getEl("memo").value.trim(),
     };
 
-    validateAttendanceForm(formData);
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     const itemsText = selectedItems.length > 0
       ? selectedItems.map((item) => `${item.name}: ${item.count}`).join("\n")
@@ -455,8 +454,7 @@ async function handleProfileSubmit(e) {
       tel: getEl("tel").value.trim(),
     };
 
-    validateProfileForm(formData);
-    await apiPostOrFallbackGet(formData);
+    await apiPost(formData);
 
     if (liff.isInClient()) {
       await liff.sendMessages([{
