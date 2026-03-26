@@ -118,7 +118,7 @@ async function handleAttendanceSubmit(e) {
       }]);
     }
     setOverlay(false);
-    await showModal("送信完了！");
+    await showModal("登録が完了しました！");
     liff.closeWindow();
   } catch (error) {
     setOverlay(false);

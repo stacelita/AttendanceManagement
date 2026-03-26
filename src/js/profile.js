@@ -64,6 +64,15 @@ async function handleProfileSubmit(e) {
   const form = getEl("staffForm");
   if (form && !validateProfileRequiredUI()) return;
 
+  const isOverwrite = getEl("overwriteCheck").checked;
+  if (isOverwrite) {
+  const isConfirmed = confirm("既に登録されている情報が上書きされます。よろしいですか？");
+    if (!isConfirmed) {
+      // 「キャンセル」が押されたらここで処理を中断
+      return; 
+    }
+  }
+
   setOverlay(true, "送信中...");
 
   try {
@@ -77,6 +86,7 @@ async function handleProfileSubmit(e) {
       birthDate: getEl("birthDate").value,
       station: getEl("station").value.trim(),
       tel: getEl("tel").value.trim(),
+      isOverwrite: isOverwrite
     };
 
     await apiPost(formData);
@@ -93,7 +103,7 @@ async function handleProfileSubmit(e) {
       }]);
     }
     setOverlay(false);
-    await showModal("送信完了！");
+    await showModal("登録が完了しました！");
     liff.closeWindow();
   } catch (error) {
     setOverlay(false);
