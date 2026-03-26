@@ -79,6 +79,15 @@ async function handleAttendanceSubmit(e) {
   // ブラウザ標準UIだけだとアラートが出ないため、こちらで必須チェックと通知を行う
   if (!validateAttendanceRequiredUI()) return;
 
+  const isOverwrite = getEl("overwriteCheck").checked;
+  if (isOverwrite) {
+  const isConfirmed = confirm("既に登録されている情報が上書きされます。よろしいですか？");
+    if (!isConfirmed) {
+      // 「キャンセル」が押されたらここで処理を中断
+      return; 
+    }
+  }
+
   setOverlay(true, "送信中...");
 
   try {
