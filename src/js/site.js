@@ -40,12 +40,22 @@ function parseJsonSafe(text) {
 
 /** apipostリクエスト */
 async function apiPost(payload) {
-  const response = await fetch(GAS_URL, {
+  // mode: 'no-cors' を削除。これにより戻り値が読み取れるようになります。
+  const response = await fetch(WORKER_URL, {
     method: "POST",
-    mode: 'no-cors',
+    headers: {
+      "Content-Type": "application/json",
+      // LINEからのリクエストを装う場合は、適切な署名ヘッダーが必要ですが、
+      // LIFFから直接送るならWorkers側でLIFF用の認証ロジックを別途通すのが理想です。
+    },
     body: JSON.stringify(payload),
   });
-  return;
+
+  if (!response.ok) {
+    throw new Error(`サーバーエラー: ${response.status}`);
+  }
+
+  return await response.json(); // ここで {status: "success"} などが取れる
 }
 
 /** apigetリクエスト */
