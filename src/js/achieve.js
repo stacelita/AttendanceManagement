@@ -105,6 +105,7 @@ async function handleAttendanceSubmit(e) {
       items: selectedItems,
       uniqueProducts: getEl("uniqueProducts").value.trim(),
       memo: getEl("memo").value.trim(),
+      isOverwrite: isOverwrite
     };
 
     await apiPost(formData);
