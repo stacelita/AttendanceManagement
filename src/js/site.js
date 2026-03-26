@@ -40,22 +40,26 @@ function parseJsonSafe(text) {
 
 /** apipostリクエスト */
 async function apiPost(payload) {
-  // mode: 'no-cors' を削除。これにより戻り値が読み取れるようになります。
-  const response = await fetch("https://lineauth.gardensea-lw.workers.dev/", {
+  // mode: 'no-cors' を削除。
+  // Content-Typeを指定しないことで、GASが苦手な「プリフライトリクエスト」を回避します。
+  const response = await fetch(GAS_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // LINEからのリクエストを装う場合は、適切な署名ヘッダーが必要ですが、
-      // LIFFから直接送るならWorkers側でLIFF用の認証ロジックを別途通すのが理想です。
-    },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload), 
   });
 
   if (!response.ok) {
-    throw new Error(`サーバーエラー: ${response.status}`);
+    throw new Error(`HTTPエラー: ${response.status}`);
   }
 
-  return await response.json(); // ここで {status: "success"} などが取れる
+  // GASの ContentService.createTextOutput().setMimeType(JSON) の結果を受け取る
+  const result = await response.json();
+
+  // GAS側で status: "error" を返している場合の判定
+  if (result && result.status === "error") {
+    throw new Error(result.message || "GAS側でエラーが発生しました。");
+  }
+
+  return result;
 }
 
 /** apigetリクエスト */
