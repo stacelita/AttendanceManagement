@@ -6,8 +6,9 @@ async function setupProfilePage() {
   if (!staffForm) return;
 
   try {
-    const isInit = await initLiff(LIFF_ID_PROFILE);
-    if (!isInit) return;
+    //const isInit = await initLiff(LIFF_ID_PROFILE);
+    //if (!isInit) return;
+    initializeBirthDateSelectors();
     setOverlay(false);
   } catch (error) {
     console.error("初期化エラー:", error);
@@ -83,7 +84,7 @@ async function handleProfileSubmit(e) {
       displayName: profile.displayName,
       userName: getEl("userName").value.trim(),
       userKana: getEl("userKana").value.trim(),
-      birthDate: getEl("birthDate").value,
+      birthDate: getBirthDateValue(),
       station: getEl("station").value.trim(),
       tel: getEl("tel").value.trim(),
       isOverwrite: isOverwrite
@@ -109,4 +110,21 @@ async function handleProfileSubmit(e) {
     setOverlay(false);
     await showModal(error.message || "エラーが発生しました。");
   }
+}
+
+function initializeBirthDateSelectors() {
+    setupYearSelect('birthYear');
+    setupMonthSelect('birthMonth');
+    setupDaySelect('birthDay');
+}
+
+function getBirthDateValue() {
+    const y = getEl('birthYear').value;
+    const m = getEl('birthMonth').value;
+    const d = getEl('birthDay').value;
+
+    if (y && m && d) {
+        return `${y}-${m}-${d}`; // 例: 1990-05-20
+    }
+    return null;
 }

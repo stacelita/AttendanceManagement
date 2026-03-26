@@ -207,3 +207,38 @@ const showModal = (message) => {
     modal.show();
   });
 };
+
+function setupYearSelect(elementId, startYear = 1940, endYear = new Date().getFullYear()) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+
+    for (let i = endYear; i >= startYear; i--) {
+        select.add(new Option(i + '年', i));
+    }
+}
+
+/**
+ * 1〜12月を生成
+ */
+function setupMonthSelect(elementId) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+
+    for (let i = 1; i <= 12; i++) {
+        const val = ("0" + i).slice(-2);
+        select.add(new Option(i + '月', val));
+    }
+}
+
+/**
+ * 1〜31日を生成
+ */
+function setupDaySelect(elementId) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+
+    for (let i = 1; i <= 31; i++) {
+        const val = ("0" + i).slice(-2);
+        select.add(new Option(i + '日', val));
+    }
+}
