@@ -81,7 +81,7 @@ async function handleAttendanceSubmit(e) {
 
   const isOverwrite = getEl("overwriteCheck").checked;
   if (isOverwrite) {
-  const isConfirmed = confirm("既に登録されている情報が上書きされます。よろしいですか？");
+  const isConfirmed = confirm("既に登録されている場合は情報が上書きされます。よろしいですか？");
     if (!isConfirmed) {
       // 「キャンセル」が押されたらここで処理を中断
       return; 
