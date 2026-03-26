@@ -41,7 +41,7 @@ function parseJsonSafe(text) {
 /** apipostリクエスト */
 async function apiPost(payload) {
   // mode: 'no-cors' を削除。これにより戻り値が読み取れるようになります。
-  const response = await fetch(GAS_URL, {
+  const response = await fetch("https://lineauth.gardensea-lw.workers.dev/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
