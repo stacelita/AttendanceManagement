@@ -6,8 +6,8 @@ async function setupProfilePage() {
   if (!staffForm) return;
 
   try {
-    //const isInit = await initLiff(LIFF_ID_PROFILE);
-    //if (!isInit) return;
+    const isInit = await initLiff(LIFF_ID_PROFILE);
+    if (!isInit) return;
     initializeBirthDateSelectors();
     setOverlay(false);
   } catch (error) {
