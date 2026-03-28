@@ -1,6 +1,20 @@
 
-/** 勤務実績入力ページ初期化 */
+/**
+ * 勤務実績入力ページ初期化
+*/
 async function setupAttendancePage() {
+  try {
+    const maintenance = await isMaintenance();
+    if (maintenance) {
+      // メンテナンス中なら専用の表示に切り替えて、処理を中断する
+      showMaintenancePage();
+      return; 
+    }
+  } catch (error) {
+    console.error("メンテナンス確認エラー:", error);
+    // チェック自体に失敗した場合は、安全のため止めるか、続行するか判断してください
+  }
+
   const datePicker = getEl("datePicker");
   const workForm = getEl("workForm");
   if (!datePicker || !workForm) return;
@@ -28,7 +42,9 @@ async function setupAttendancePage() {
   workForm.addEventListener("submit", handleAttendanceSubmit);
 }
 
-/** 勤務場所取得 */
+/**
+ * 勤務場所取得
+*/
 async function fetchShift(selectedDate) {
   const display = getEl("locationDisplay");
   if (!display) return;
@@ -37,7 +53,7 @@ async function fetchShift(selectedDate) {
   try {
     const profile = await liff.getProfile();
     // shift_search は読み取りなので GET に寄せてCORS影響を減らす
-    const data = await apiGet(ACTION.SHIFT_SEARCH, {
+    const data = await apiGet(ACTION.GET_ASSIGNED_STORE, {
       userId: profile.userId,
       targetDate: selectedDate,
     });
@@ -48,7 +64,9 @@ async function fetchShift(selectedDate) {
   }
 }
 
-/** 勤務実績フォーム検証 */
+/** 
+ * 勤務実績フォーム検証 
+*/
 function validateAttendanceRequiredUI() {
   const dateEl = getEl("datePicker");
   const categoryEl = getEl("workCategory");
@@ -71,7 +89,9 @@ function validateAttendanceRequiredUI() {
   return true;
 }
 
-/** 勤務実績送信 */
+/**
+ * 勤務実績送信
+*/
 async function handleAttendanceSubmit(e) {
   e.preventDefault();
 
@@ -97,7 +117,7 @@ async function handleAttendanceSubmit(e) {
     const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || "";
 
     const formData = {
-      action: ACTION.ACHIEVE,
+      action: ACTION.RECORD_ARCHIVE,
       userId: profile.userId,
       userName: profile.displayName,
       date: getEl("datePicker").value,
@@ -136,15 +156,15 @@ async function handleAttendanceSubmit(e) {
   }
 }
 
-
-
-/** 獲得項目取得 */
+/**
+ * 獲得項目取得
+*/
 async function setupWorkItemList(kubunType) {
   const container = getEl("workItemList");
   if (!container) return;
 
   try {
-    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
+    const dataList = await apiGet(ACTION.GET_CATEGORY, { kubunType: kubunType });
     container.innerHTML = "";
 
     dataList.forEach((item) => {

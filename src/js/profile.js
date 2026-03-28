@@ -1,7 +1,16 @@
 
 
-/** スタッフ情報入力ページ初期化 */
+/**
+ * スタッフ情報入力ページ初期化 
+*/
 async function setupProfilePage() {
+  const maintenance = await isMaintenance();
+  if (maintenance) {
+    // メンテナンス中なら専用の表示に切り替えて、処理を中断する
+    showMaintenancePage();
+    return; 
+  }
+
   const staffForm = getEl("staffForm");
   if (!staffForm) return;
 
@@ -18,7 +27,9 @@ async function setupProfilePage() {
   staffForm.addEventListener("submit", handleProfileSubmit);
 }
 
-/** 個情報報フォーム検証 */
+/** 
+ * 個情報報フォーム検証
+*/
 function validateProfileRequiredUI() {
   const userNameEl = getEl("userName");
   if (userNameEl && !userNameEl.checkValidity()) {
@@ -58,7 +69,9 @@ function validateProfileRequiredUI() {
   return true;
 }
 
-/** スタッフ情報送信 */
+/** 
+ * スタッフ情報送信
+*/
 async function handleProfileSubmit(e) {
   e.preventDefault();
 
@@ -79,7 +92,7 @@ async function handleProfileSubmit(e) {
   try {
     const profile = await liff.getProfile();
     const formData = {
-      action: ACTION.PROFILE,
+      action: ACTION.RECORD_PROFILE,
       userId: profile.userId,
       displayName: profile.displayName,
       userName: getEl("userName").value.trim(),
@@ -112,12 +125,18 @@ async function handleProfileSubmit(e) {
   }
 }
 
+/**
+ * 誕生日初期化
+ */
 function initializeBirthDateSelectors() {
     setupYearSelect('birthYear');
     setupMonthSelect('birthMonth');
     setupDaySelect('birthDay');
 }
 
+/**
+ * 誕生日取得
+ */
 function getBirthDateValue() {
     const y = getEl('birthYear').value;
     const m = getEl('birthMonth').value;

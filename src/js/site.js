@@ -3,18 +3,23 @@ const LIFF_ID_PROFILE = "2008956543-MaLNj6aF";
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyKD_Su-tKQNM9U07-2S3I1yvBn-9bAKFABzwSTeckViKFomaP_Zm0K0L_EsYf_bSDSvg/exec";
 
 const ACTION = {
-  SHIFT_SEARCH: "shift_search",
-  GET_KUBUN: "get_kubun",
-  ACHIEVE: "achieve",
-  PROFILE: "profile",
+  GET_ASSIGNED_STORE: "get_assigned_store",
+  GET_CATEGORY: "get_category",
+  RECORD_ARCHIVE: "record_achieve",
+  RECORD_PROFILE: "record_profile",
+  IS_MAINTENANCE: "is_maintenance",
 };
 
-/** idによるHTML要素取得 */
+/** 
+ * idによるHTML要素取得
+*/
 function getEl(id) {
   return document.getElementById(id);
 }
 
-/** オーバレイ設定 */
+/** 
+ * オーバレイ設定
+*/
 function setOverlay(visible, text) {
   const overlay = getEl("overlay");
   const overlayText = getEl("overlayText");
@@ -23,13 +28,17 @@ function setOverlay(visible, text) {
   overlay.style.display = visible ? "flex" : "none";
 }
 
-/** ページ読み込み失敗 */
+/** 
+ * ページ読み込み失敗
+*/
 function showPageInitError(message) {
   const overlayText = getEl("overlayText");
   if (overlayText) overlayText.textContent = message;
 }
 
-/** JSONパース */
+/** 
+ * JSONパース 
+*/
 function parseJsonSafe(text) {
   try {
     return JSON.parse(text);
@@ -38,7 +47,9 @@ function parseJsonSafe(text) {
   }
 }
 
-/** apipostリクエスト */
+/** 
+ * apipostリクエスト 
+*/
 async function apiPost(payload) {
   // mode: 'no-cors' を削除。
   // Content-Typeを指定しないことで、GASが苦手な「プリフライトリクエスト」を回避します。
@@ -62,7 +73,9 @@ async function apiPost(payload) {
   return result;
 }
 
-/** apigetリクエスト */
+/** 
+ * apigetリクエスト 
+*/
 async function apiGet(action, params) {
   const search = new URLSearchParams();
   search.set("action", action);
@@ -87,7 +100,9 @@ async function apiGet(action, params) {
   return data;
 }
 
-
+/** 
+ * 項目スクロール
+*/
 function scrollToAndFocus(el) {
   if (!el) return;
 
@@ -134,7 +149,9 @@ function scrollToAndFocus(el) {
 
 }
 
-/** liff初期化処理 */
+/** 
+ * liff初期化処理
+*/
 async function initLiff(inLiffId) {
   try {
     await liff.init({ liffId: inLiffId });
@@ -149,13 +166,15 @@ async function initLiff(inLiffId) {
   }
 }
 
-/** 区分値取得 */
+/**
+ * 区分値取得
+*/
 async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   const selectEl = getEl(selectId);
   if (!selectEl) return;
 
   try {
-    const dataList = await apiGet(ACTION.GET_KUBUN, { kubunType: kubunType });
+    const dataList = await apiGet(ACTION.GET_CATEGORY, { kubunType: kubunType });
     selectEl.innerHTML = "";
 
     if (addDefault) {
@@ -177,6 +196,9 @@ async function setupKubunDropdown(selectId, kubunType, addDefault = true) {
   }
 }
 
+/** 
+ * プルダウン取得
+ */
 function getSelectedItems() {
   const selects = document.querySelectorAll(".item-count-select");
   return Array.from(selects).map((select) => ({
@@ -186,7 +208,21 @@ function getSelectedItems() {
   }));
 }
 
-/** モーダル表示 */
+/** 
+ * メンテナンス中取得 
+*/
+async function isMaintenance() {
+  try {
+    const data = await apiGet(ACTION.IS_MAINTENANCE, { });
+    return !!(data && data.is_maintenance);
+  } catch (error) {
+    throw error;
+  }
+}
+
+/** 
+ * モーダル表示 
+*/
 const showModal = (message) => {
   return new Promise((resolve) => {
     const modalElem = document.getElementById('statusModal');
@@ -208,6 +244,9 @@ const showModal = (message) => {
   });
 };
 
+/**
+ * プルダウン設定(年)
+ */
 function setupYearSelect(elementId, startYear = 1940, endYear = new Date().getFullYear()) {
     const select = document.getElementById(elementId);
     if (!select) return;
@@ -218,7 +257,7 @@ function setupYearSelect(elementId, startYear = 1940, endYear = new Date().getFu
 }
 
 /**
- * 1〜12月を生成
+ * プルダウン設定(月)
  */
 function setupMonthSelect(elementId) {
     const select = document.getElementById(elementId);
@@ -231,7 +270,7 @@ function setupMonthSelect(elementId) {
 }
 
 /**
- * 1〜31日を生成
+ * プルダウン設定(日)
  */
 function setupDaySelect(elementId) {
     const select = document.getElementById(elementId);
@@ -241,4 +280,38 @@ function setupDaySelect(elementId) {
         const val = ("0" + i).slice(-2);
         select.add(new Option(i + '日', val));
     }
+}
+
+/**
+ * メンテナンス画面表示
+ */
+function showMaintenancePage() {
+
+  // bodyの中身をメンテナンス表示に差し替える
+  document.body.classList.add("maintenance-body");
+
+  document.body.innerHTML = `
+    <div class="container d-flex align-items-center justify-content-center maintenance-wrapper">
+      <div class="text-center maintenance-card">
+        
+        <div class="mb-4">
+          <i class="bi bi-gear-fill working-animation"></i>
+        </div>
+
+        <h2 class="maintenance-title">メンテナンス中</h2>
+        
+        <p class="maintenance-text">
+          いつもお疲れ様です！<br>
+          現在、サービスの向上のため<br>
+          メンテナンスを行っております。
+        </p>
+
+        <button onclick="liff.closeWindow()" class="btn btn-maintenance-close">
+          LINEに戻る
+        </button>
+
+      </div>
+    </div>
+  `;
+  setOverlay(false);
 }
