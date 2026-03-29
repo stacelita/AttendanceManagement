@@ -19,7 +19,8 @@ async function setupProfilePage() {
     if (!isInit) return;
     initializeBirthDateSelectors();
 
-   
+    const profile = await liff.getProfile();
+    
 
     // データが存在する場合のみフォームにセット
  
