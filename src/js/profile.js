@@ -20,10 +20,22 @@ async function setupProfilePage() {
     initializeBirthDateSelectors();
 
     const profile = await liff.getProfile();
-    
+    const data = await apiGet(ACTION.GET_PROFILE, {
+      userId: profile.userId,
+    });
 
     // データが存在する場合のみフォームにセット
- 
+    if (data) {
+      // formのname属性やid属性に合わせて調整してください
+      getEl("userName").value = data.name || '';
+      getEl("userKana").value = data.furigana || '';
+      getEl("station").value = data.station || '';
+      getEl("tel").value = data.phone || '';
+      const [year, month, day] = data.birthday.split('-');
+      getEl("birthYear").value = Number(year);
+      getEl("birthMonth").value = Number(month);
+      getEl("birthDay").value = Number(day);
+    }
 
     setOverlay(false);
   } catch (error) {
