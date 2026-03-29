@@ -32,9 +32,9 @@ async function setupProfilePage() {
       getEl("station").value = data.profile.station || '';
       getEl("tel").value = data.profile.phone || '';
       const [year, month, day] = data.profile.birthday.split('-');
-      getEl("birthYear").value = Number(year);
-      getEl("birthMonth").value = Number(month);
-      getEl("birthDay").value = Number(day);
+      getEl("birthYear").value = year;
+      getEl("birthMonth").value = month;
+      getEl("birthDay").value = day;
     }
 
     setOverlay(false);
