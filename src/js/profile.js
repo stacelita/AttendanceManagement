@@ -19,10 +19,7 @@ async function setupProfilePage() {
     if (!isInit) return;
     initializeBirthDateSelectors();
 
-    const profile = await liff.getProfile();
-    const data = await apiGet(ACTION.GET_PROFILE, {
-      userId: profile.userId,
-    });
+   
 
     // データが存在する場合のみフォームにセット
  
