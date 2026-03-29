@@ -25,7 +25,7 @@ async function setupProfilePage() {
     });
 
     // データが存在する場合のみフォームにセット
-    if (data) {
+    if (data.profile) {
       // formのname属性やid属性に合わせて調整してください
       getEl("userName").value = data.profile.name || '';
       getEl("userKana").value = data.profile.furigana || '';
