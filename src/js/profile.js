@@ -25,14 +25,7 @@ async function setupProfilePage() {
     });
 
     // データが存在する場合のみフォームにセット
-    if (data) {
-      // formのname属性やid属性に合わせて調整してください
-      getEl("userName").value = data.name || '';
-      getEl("userKana").value = data.furigana || '';
-      getEl("station").value = data.station || '';
-      getEl("tel").value = data.phone || '';
-     
-    }
+ 
 
     setOverlay(false);
   } catch (error) {
