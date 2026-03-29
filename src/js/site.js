@@ -316,3 +316,24 @@ function showMaintenancePage() {
   `;
   setOverlay(false);
 }
+
+document.addEventListener('keydown', function (e) {
+  // 押されたキーがEnter（13）でない場合は無視
+  if (e.key !== 'Enter') return;
+
+  const target = e.target;
+
+  // 1. textarea内でのEnterは「改行」なので許可
+  if (target.tagName === 'TEXTAREA') return;
+
+  // 2. type="submit" や type="button" の上でのEnterは「クリック」と同じなので許可
+  if (target.tagName === 'BUTTON' || (target.tagName === 'INPUT' && ['submit', 'button'].includes(target.type))) {
+    return;
+  }
+
+  // それ以外の INPUT 要素（text, number, dateなど）でのEnterは送信を防止
+  e.preventDefault();
+  
+  // (オプション) Enterを押したときに次の入力欄にフォーカスを移したい場合は、ここに処理を追加できます
+  console.log("Enterによる送信をブロックしました");
+});
