@@ -18,6 +18,26 @@ async function setupProfilePage() {
     const isInit = await initLiff(LIFF_ID_PROFILE);
     if (!isInit) return;
     initializeBirthDateSelectors();
+
+    const profile = await liff.getProfile();
+    const data = await apiGet(ACTION.GET_PROFILE, {
+      userId: profile.userId,
+    });
+
+    // データが存在する場合のみフォームにセット
+    if (data) {
+      // formのname属性やid属性に合わせて調整してください
+      getEl("userName").value = data.name || '';
+      getEl("userKana").value = data.furigana || '';
+      getEl("").value = data.birthday || '';
+      getEl("station").value = data.station || '';
+      getEl("tel").value = data.phone || '';
+      const [year, month, day] = data.birthday.split('-');
+      getEl("birthYear").value = Number(year);
+      getEl("birthMonth").value = Number(month);
+      getEl("birthDay").value = Number(day);
+    }
+
     setOverlay(false);
   } catch (error) {
     console.error("初期化エラー:", error);
@@ -78,15 +98,6 @@ async function handleProfileSubmit(e) {
   const form = getEl("staffForm");
   if (form && !validateProfileRequiredUI()) return;
 
-  const isOverwrite = getEl("overwriteCheck").checked;
-  if (isOverwrite) {
-  const isConfirmed = confirm("既に登録されている場合は情報が上書きされます。よろしいですか？");
-    if (!isConfirmed) {
-      // 「キャンセル」が押されたらここで処理を中断
-      return; 
-    }
-  }
-
   setOverlay(true, "送信中...");
 
   try {
@@ -100,7 +111,6 @@ async function handleProfileSubmit(e) {
       birthDate: getBirthDateValue(),
       station: getEl("station").value.trim(),
       tel: getEl("tel").value.trim(),
-      isOverwrite: isOverwrite
     };
 
     await apiPost(formData);

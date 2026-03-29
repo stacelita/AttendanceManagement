@@ -7,6 +7,7 @@ const ACTION = {
   GET_CATEGORY: "get_category",
   RECORD_ARCHIVE: "record_achieve",
   RECORD_PROFILE: "record_profile",
+  GET_PROFILE: "get_profile",
   IS_MAINTENANCE: "is_maintenance",
 };
 
