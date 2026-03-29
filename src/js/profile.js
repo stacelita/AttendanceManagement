@@ -27,11 +27,11 @@ async function setupProfilePage() {
     // データが存在する場合のみフォームにセット
     if (data) {
       // formのname属性やid属性に合わせて調整してください
-      getEl("userName").value = data.pofile.name || '';
-      getEl("userKana").value = data.pofile.furigana || '';
-      getEl("station").value = data.pofile.station || '';
-      getEl("tel").value = data.pofile.phone || '';
-      const [year, month, day] = data.pofile.birthday.split('-');
+      getEl("userName").value = data.profile.name || '';
+      getEl("userKana").value = data.profile.furigana || '';
+      getEl("station").value = data.profile.station || '';
+      getEl("tel").value = data.profile.phone || '';
+      const [year, month, day] = data.profile.birthday.split('-');
       getEl("birthYear").value = Number(year);
       getEl("birthMonth").value = Number(month);
       getEl("birthDay").value = Number(day);
