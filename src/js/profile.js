@@ -35,6 +35,12 @@ async function setupProfilePage() {
       getEl("birthYear").value = year;
       getEl("birthMonth").value = month;
       getEl("birthDay").value = day;
+
+      const submitBtn = getEl("submitBtn");
+      const infoMessage = getEl("infoMessage");
+
+      if (submitBtn) submitBtn.classList.add('d-none');    // ボタンを隠す
+      if (infoMessage) infoMessage.classList.remove('d-none'); // メッセージを出す
     }
 
     setOverlay(false);
