@@ -121,6 +121,7 @@ async function handleAttendanceSubmit(e) {
       userId: profile.userId,
       userName: profile.displayName,
       date: getEl("datePicker").value,
+      store: getEl("locationDisplay").value,
       categoryValue: categorySelect.value,
       items: selectedItems,
       uniqueProducts: getEl("uniqueProducts").value.trim(),
@@ -139,6 +140,7 @@ async function handleAttendanceSubmit(e) {
         type: "text",
         text: `【勤務実績登録】\n` +
           `日付：${formData.date}\n` +
+          `勤務場所：${formData.store}\n` +
           `稼働内容：${categoryName}\n` +
           `--- 獲得項目 ---\n` +
           `${itemsText}\n` +
