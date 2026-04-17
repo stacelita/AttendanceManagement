@@ -121,7 +121,7 @@ async function handleAttendanceSubmit(e) {
       userId: profile.userId,
       userName: profile.displayName,
       date: getEl("datePicker").value,
-      store: getEl("locationDisplay").value,
+      store: getEl("locationDisplay").textContent,
       categoryValue: categorySelect.value,
       items: selectedItems,
       uniqueProducts: getEl("uniqueProducts").value.trim(),
