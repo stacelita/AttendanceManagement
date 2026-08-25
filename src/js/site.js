@@ -1,6 +1,6 @@
 const LIFF_ID_ARCHIVE = "2008956543-HV2ZIzKe";
 const LIFF_ID_PROFILE = "2008956543-MaLNj6aF";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyKD_Su-tKQNM9U07-2S3I1yvBn-9bAKFABzwSTeckViKFomaP_Zm0K0L_EsYf_bSDSvg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx_N2GjqMIPN9iiIh94CPXOF3Ri4gHK4QOhDT3d4rUKGQ__uKMhVWGv3esx6LqF6Ssr2Q/exec";
 
 const ACTION = {
   GET_ASSIGNED_STORE: "get_assigned_store",
