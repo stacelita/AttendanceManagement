@@ -42,6 +42,7 @@ async function setupAchievePage() {
   }
 
   getEl("datePicker").value = today;
+  getEl("datePicker").max = today; // 未来の日付の実績は登録できないようにする
   try {
     await Promise.all([
       loadLocation(todayStore),

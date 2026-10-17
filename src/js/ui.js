@@ -32,19 +32,19 @@ export function showLoadError(message) {
 // --- モーダル ---
 
 /**
- * メッセージをモーダルで表示し、OK で閉じ終わるまで待つ
+ * メッセージをモーダルで表示し、閉じ終わるまで待つ
+ * 閉じるのは OK ボタンだけ（外側のタップ・Esc では閉じない設定は HTML 側の data-bs-backdrop / data-bs-keyboard）。
+ * どの方法で閉じても次の処理へ進むよう、閉じ終わったことを待つ
  * ※ bootstrap は Bootstrap のスクリプトで読み込まれるグローバル変数
  */
 export function showModal(message) {
   return new Promise((resolve) => {
     const modalEl = getEl("statusModal");
-    const modal = new bootstrap.Modal(modalEl);
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
     getEl("modalMessage").innerText = message;
-    getEl("modalConfirmBtn").onclick = () => {
-      modalEl.addEventListener("hidden.bs.modal", () => resolve(), { once: true });
-      modal.hide();
-    };
+    modalEl.addEventListener("hidden.bs.modal", () => resolve(), { once: true });
+    getEl("modalConfirmBtn").onclick = () => modal.hide();
     modal.show();
   });
 }

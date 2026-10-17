@@ -56,7 +56,9 @@ async function fetchSavedProfile() {
   return data.profile;
 }
 
-/** 登録済みの内容を表示し、登録ボタンを隠して「変更は管理者へ」の案内を出す */
+const PROFILE_FIELD_IDS = ["userName", "userKana", "birthYear", "birthMonth", "birthDay", "station", "tel"];
+
+/** 登録済みの内容を読み取り専用で表示し、登録ボタンを隠して「変更は管理者へ」の案内を出す */
 function showRegisteredProfile(profile) {
   getEl("userName").value = profile.name || "";
   getEl("userKana").value = profile.furigana || "";
@@ -68,6 +70,11 @@ function showRegisteredProfile(profile) {
   getEl("birthMonth").value = month || "";
   getEl("birthDay").value = day || "";
 
+  // プルダウンは readonly が効かないため disabled にする
+  PROFILE_FIELD_IDS.map(getEl).forEach((el) => {
+    if (el.tagName === "SELECT") el.disabled = true;
+    else el.readOnly = true;
+  });
   getEl("submitBtn").classList.add("d-none");
   getEl("infoMessage").classList.remove("d-none");
 }
@@ -92,8 +99,7 @@ function getBirthDate() {
 
 async function submitProfile(e) {
   e.preventDefault();
-  const required = ["userName", "userKana", "birthYear", "birthMonth", "birthDay", "station", "tel"].map(getEl);
-  if (!checkRequired(required)) return;
+  if (!checkRequired(PROFILE_FIELD_IDS.map(getEl))) return;
 
   showOverlay("送信中...");
   try {
