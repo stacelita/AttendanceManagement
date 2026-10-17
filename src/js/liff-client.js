@@ -27,22 +27,41 @@ export function getLineProfile() {
   return liff.getProfile();
 }
 
+const ID_TOKEN_EXPIRED_MESSAGE = "画面を開いてから時間が経ったため、送信できませんでした。\n画面を閉じて、もう一度開いてください。";
+const ID_TOKEN_EXPIRY_MARGIN_MS = 60 * 1000; // 通信中に期限が切れないよう、1分の余裕を見る
+
 /**
  * LINEのIDトークン（GAS側で本人確認に使う）。取得できなければ null
+ * IDトークンには有効期限（発行から約1時間）があり、画面を開いたまま期限が切れていたら例外を投げる
  * ※LIFFアプリのスコープで openid が有効になっている必要がある
  */
 export function getIdToken() {
+  let idToken;
+  let decoded;
   try {
-    return liff.getIDToken() || null;
+    idToken = liff.getIDToken();
+    decoded = liff.getDecodedIDToken();
   } catch {
     return null;
   }
+  if (!idToken) return null;
+
+  if (decoded && decoded.exp && decoded.exp * 1000 < Date.now() + ID_TOKEN_EXPIRY_MARGIN_MS) {
+    throw new Error(ID_TOKEN_EXPIRED_MESSAGE);
+  }
+  return idToken;
 }
 
-/** LINEアプリ内で開いている場合だけ、トークにメッセージを送る */
+/**
+ * LINEアプリ内で開いている場合だけ、トークにメッセージを送る
+ * 登録などの処理が終わったあとのお知らせなので、送れなくてもエラーにはしない
+ */
 export async function sendMessageIfInClient(text) {
-  if (liff.isInClient()) {
+  if (!liff.isInClient()) return;
+  try {
     await liff.sendMessages([{ type: "text", text }]);
+  } catch (error) {
+    console.error("トークへの送信エラー:", error);
   }
 }
 

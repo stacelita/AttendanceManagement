@@ -44,7 +44,7 @@ async function setupAchievePage() {
   getEl("datePicker").value = today;
   try {
     await Promise.all([
-      todayStore.then((location) => showLocation(location)),
+      loadLocation(todayStore),
       workCategories.then((list) => setSelectOptions(getEl("workCategory"), list)),
       workItems.then(renderWorkItems, (error) => {
         getEl("workItemList").innerHTML = '<div class="list-group-item text-danger">データの取得に失敗しました</div>';
@@ -57,40 +57,54 @@ async function setupAchievePage() {
     showLoadError(LOAD_ERROR_MESSAGE);
   }
 
-  getEl("datePicker").addEventListener("change", (e) => refreshLocation(e.target.value));
+  getEl("datePicker").addEventListener("change", (e) => loadLocation(fetchAssignedStore(e.target.value)));
   getEl("workForm").addEventListener("submit", submitAchievement);
 }
 
 // --- 勤務場所 ---
 
+const LOCATION_LOADING_MESSAGE = "勤務場所を読み込み中です。読み込みが終わってから送信してください。";
+const LOCATION_ERROR_MESSAGE = "勤務場所を取得できませんでした。日付を選び直すか、画面を開き直してください。";
+
 // 日付を続けて変えたとき、古い日付の結果で表示を上書きしないための番号
 let locationRequestId = 0;
+// 表示中の勤務場所の状態（取得できたものだけ送信に使う）
+let locationStatus = "loading"; // loading / ready / error
 
-/** 指定日の勤務場所を取得（取得に失敗したら "エラー"） */
+/** 指定日の勤務場所（シフトがなければ "シフトなし"） */
 async function fetchAssignedStore(date) {
+  const profile = await getLineProfile();
+  const data = await postToGas(
+    ACTION.GET_ASSIGNED_STORE,
+    { userId: profile.userId, targetDate: date },
+    getIdToken()
+  );
+  return data && data.location ? data.location : "シフトなし";
+}
+
+/**
+ * 勤務場所を取得して表示する（失敗したら "エラー" と表示。例外は投げない）
+ * @param {Promise<string>} request fetchAssignedStore の結果
+ */
+async function loadLocation(request) {
+  const requestId = ++locationRequestId;
+  locationStatus = "loading";
+  showLocation("読み込み中...");
   try {
-    const profile = await getLineProfile();
-    const data = await postToGas(
-      ACTION.GET_ASSIGNED_STORE,
-      { userId: profile.userId, targetDate: date },
-      getIdToken()
-    );
-    return data && data.location ? data.location : "シフトなし";
+    const location = await request;
+    if (requestId !== locationRequestId) return;
+    showLocation(location);
+    locationStatus = "ready";
   } catch (error) {
+    if (requestId !== locationRequestId) return;
     console.error("シフト取得エラー:", error);
-    return "エラー";
+    showLocation("エラー");
+    locationStatus = "error";
   }
 }
 
 function showLocation(location) {
   getEl("locationDisplay").innerText = location;
-}
-
-async function refreshLocation(date) {
-  const requestId = ++locationRequestId;
-  showLocation("読み込み中...");
-  const location = await fetchAssignedStore(date);
-  if (requestId === locationRequestId) showLocation(location);
 }
 
 // --- 獲得項目 ---
@@ -133,6 +147,11 @@ function getSelectedItems() {
 async function submitAchievement(e) {
   e.preventDefault();
   if (!checkRequired([getEl("datePicker"), getEl("workCategory")])) return;
+  // 勤務場所が「読み込み中...」「エラー」のまま登録されないようにする
+  if (locationStatus !== "ready") {
+    await showModal(locationStatus === "loading" ? LOCATION_LOADING_MESSAGE : LOCATION_ERROR_MESSAGE);
+    return;
+  }
 
   const isOverwrite = getEl("overwriteCheck").checked;
   if (isOverwrite && !confirm("既に登録されている場合は情報が上書きされます。よろしいですか？")) return;
