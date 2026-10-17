@@ -20,7 +20,9 @@ async function setupProfilePage() {
     initializeBirthDateSelectors();
 
     const profile = await liff.getProfile();
-    const data = await apiGet(ACTION.GET_PROFILE, {
+    // 個人のデータを扱うため、IDトークンを付けて POST で送る（トークンをURLに載せない）
+    const data = await apiPost({
+      action: ACTION.GET_PROFILE,
       userId: profile.userId,
     });
 

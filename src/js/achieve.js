@@ -52,8 +52,9 @@ async function fetchShift(selectedDate) {
 
   try {
     const profile = await liff.getProfile();
-    // shift_search は読み取りなので GET に寄せてCORS影響を減らす
-    const data = await apiGet(ACTION.GET_ASSIGNED_STORE, {
+    // 個人のデータを扱うため、IDトークンを付けて POST で送る（トークンをURLに載せない）
+    const data = await apiPost({
+      action: ACTION.GET_ASSIGNED_STORE,
       userId: profile.userId,
       targetDate: selectedDate,
     });

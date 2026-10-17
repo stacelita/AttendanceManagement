@@ -1,6 +1,19 @@
-const LIFF_ID_ARCHIVE = "2008956543-HV2ZIzKe";
-const LIFF_ID_PROFILE = "2008956543-MaLNj6aF";
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx_N2GjqMIPN9iiIh94CPXOF3Ri4gHK4QOhDT3d4rUKGQ__uKMhVWGv3esx6LqF6Ssr2Q/exec";
+/**
+ * 部署ごとの設定は、LIFFアプリの「エンドポイントURL」のパラメータで受け取る（ページは全部署で共通）
+ *   例）.../pages/achieve/?dept=SALES2&liffId=xxxxxxxxxx-xxxxxxxx
+ *   パラメータがなければ第1営業部（従来の設定）として動く
+ */
+const PAGE_PARAMS = new URLSearchParams(window.location.search);
+const DEPT = PAGE_PARAMS.get("dept") || "";
+const LIFF_ID_FROM_URL = PAGE_PARAMS.get("liffId") || "";
+
+const LIFF_ID_ARCHIVE = LIFF_ID_FROM_URL || "2008956543-HV2ZIzKe";
+const LIFF_ID_PROFILE = LIFF_ID_FROM_URL || "2008956543-MaLNj6aF";
+
+// 第1営業部が共通のGASへ移行するまでは、部署の指定がなければ従来のGASを使う
+const GAS_URL_LEGACY = "https://script.google.com/macros/s/AKfycbx_N2GjqMIPN9iiIh94CPXOF3Ri4gHK4QOhDT3d4rUKGQ__uKMhVWGv3esx6LqF6Ssr2Q/exec";
+const GAS_URL_SHARED = "https://script.google.com/macros/s/AKfycbyhNwPwFZrsfIZAwHQTGaTPq6E-0mt4nLnLNYXmHkIizT9kDXeRfN5HApwYwGlTpawp/exec";
+const GAS_URL = DEPT ? GAS_URL_SHARED : GAS_URL_LEGACY;
 
 const ACTION = {
   GET_ASSIGNED_STORE: "get_assigned_store",
@@ -48,15 +61,33 @@ function parseJsonSafe(text) {
   }
 }
 
-/** 
- * apipostリクエスト 
+/**
+ * LINEのIDトークン（GAS側で本人確認に使う）。取得できなければ null
+ * ※LIFFアプリのスコープで openid が有効になっている必要がある
+ */
+function getIdTokenSafe() {
+  try {
+    return liff.getIDToken() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * apipostリクエスト
+ * 部署コード（dept）とIDトークン（idToken）を付けて送る
 */
 async function apiPost(payload) {
+  const body = Object.assign({}, payload);
+  if (DEPT) body.dept = DEPT;
+  const idToken = getIdTokenSafe();
+  if (idToken) body.idToken = idToken;
+
   // mode: 'no-cors' を削除。
   // Content-Typeを指定しないことで、GASが苦手な「プリフライトリクエスト」を回避します。
   const response = await fetch(GAS_URL, {
     method: "POST",
-    body: JSON.stringify(payload), 
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -74,12 +105,14 @@ async function apiPost(payload) {
   return result;
 }
 
-/** 
- * apigetリクエスト 
+/**
+ * apigetリクエスト
+ * 個人のデータを扱わない取得（区分値・メンテナンス状態）専用。IDトークンは付けない（URLに載せないため）
 */
 async function apiGet(action, params) {
   const search = new URLSearchParams();
   search.set("action", action);
+  if (DEPT) search.set("dept", DEPT);
   if (params) {
     Object.keys(params).forEach((key) => {
       if (params[key] === undefined) return;
