@@ -1,24 +1,18 @@
 /**
- * ほとんど変わらないデータ（区分値・メンテナンス状態）の取得
+ * 画面の表示に必要なデータ（メンテナンス状態・区分値）の取得
  */
 import { ACTION } from "./config.js";
 import { getFromGas } from "./api.js";
 
 /**
- * メンテナンス中か
- * 判定の通信に失敗した場合は、利用を止めないように「メンテナンス中ではない」として扱う
+ * メンテナンス状態と区分値を、GAS の1回の呼び出しでまとめて取得する
+ * @param {string[]} kubunTypes 区分ID
+ * @return {Promise<{isMaintenance: boolean, categories: Object<string, Array<{value: string, name: string}>>}>}
  */
-export async function isMaintenance() {
-  try {
-    const data = await getFromGas(ACTION.IS_MAINTENANCE);
-    return !!(data && data.is_maintenance);
-  } catch (error) {
-    console.error("メンテナンス確認エラー:", error);
-    return false;
-  }
-}
-
-/** 区分値の一覧 [{ value, name }] */
-export function getCategories(kubunType) {
-  return getFromGas(ACTION.GET_CATEGORY, { kubunType });
+export async function getPageData(kubunTypes) {
+  const data = await getFromGas(ACTION.GET_PAGE_DATA, { kubunTypes: kubunTypes.join(",") });
+  return {
+    isMaintenance: !!data.is_maintenance,
+    categories: data.categories || {},
+  };
 }

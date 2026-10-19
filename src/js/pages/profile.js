@@ -3,7 +3,6 @@
  */
 import { ACTION, LIFF_ID, CONFIG_ERROR } from "../config.js";
 import { postToGas } from "../api.js";
-import { isMaintenance } from "../master.js";
 import { initLiff, getLineProfile, getIdToken, sendMessageIfInClient, closeLiffWindow } from "../liff-client.js";
 import {
   getEl, hideOverlay, showOverlay, showLoadError, showModal, showMaintenancePage,
@@ -25,18 +24,8 @@ async function setupProfilePage() {
   preventSubmitOnEnter();
   setupBirthDateSelects();
 
-  // メンテナンス判定と LIFF の初期化は同時に始め、ログインが済んだらすぐ登録済みの情報を取りに行く
-  const maintenance = isMaintenance();
-  const liffState = initLiff(LIFF_ID);
-  const savedProfile = liffState.then((state) => (state === "ready" ? fetchSavedProfile() : null));
-
-  savedProfile.catch(() => {}); // メンテナンス中で使わなかった場合に警告を出さない
-  if (await maintenance) {
-    showMaintenancePage();
-    return;
-  }
-
-  const state = await liffState;
+  // ログイン（LIFFの初期化）が済んだら、登録済みの情報とメンテナンス状態を GAS の1回の呼び出しで取得する
+  const state = await initLiff(LIFF_ID);
   if (state === "login") return; // ログイン画面へ移動中
   if (state === "error") {
     showLoadError(LOAD_ERROR_MESSAGE);
@@ -44,7 +33,11 @@ async function setupProfilePage() {
   }
 
   try {
-    const profile = await savedProfile;
+    const { profile, isMaintenance } = await fetchSavedProfile();
+    if (isMaintenance) {
+      showMaintenancePage();
+      return;
+    }
     if (profile) showRegisteredProfile(profile);
     hideOverlay();
   } catch (error) {
@@ -55,11 +48,11 @@ async function setupProfilePage() {
   getEl("staffForm").addEventListener("submit", submitProfile);
 }
 
-/** 登録済みのスタッフ情報（未登録なら null） */
+/** 登録済みのスタッフ情報（未登録なら profile: null）とメンテナンス状態 */
 async function fetchSavedProfile() {
   const lineProfile = await getLineProfile();
   const data = await postToGas(ACTION.GET_PROFILE, { userId: lineProfile.userId }, getIdToken());
-  return data.profile;
+  return { profile: data.profile, isMaintenance: !!data.is_maintenance };
 }
 
 const PROFILE_FIELD_IDS = ["userName", "userKana", "birthYear", "birthMonth", "birthDay", "station", "tel"];

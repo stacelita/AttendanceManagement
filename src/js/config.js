@@ -24,12 +24,11 @@ export const GAS_URL = "https://script.google.com/macros/s/AKfycbyhNwPwFZrsfIZAw
 
 /** GASの処理名（action） */
 export const ACTION = {
+  GET_PAGE_DATA: "get_page_data", // メンテナンス状態と区分値をまとめて取得
   GET_ASSIGNED_STORE: "get_assigned_store",
-  GET_CATEGORY: "get_category",
   RECORD_ACHIEVE: "record_achieve",
   RECORD_PROFILE: "record_profile",
-  GET_PROFILE: "get_profile",
-  IS_MAINTENANCE: "is_maintenance",
+  GET_PROFILE: "get_profile", // 登録済みのスタッフ情報とメンテナンス状態
 };
 
 /** 定数シートの区分ID */

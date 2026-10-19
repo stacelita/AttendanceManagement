@@ -3,7 +3,7 @@
  */
 import { ACTION, KUBUN, LIFF_ID, CONFIG_ERROR } from "../config.js";
 import { postToGas } from "../api.js";
-import { isMaintenance, getCategories } from "../master.js";
+import { getPageData } from "../master.js";
 import { initLiff, getLineProfile, getIdToken, sendMessageIfInClient, closeLiffWindow } from "../liff-client.js";
 import {
   getEl, hideOverlay, showOverlay, showLoadError, showModal, showMaintenancePage,
@@ -26,16 +26,22 @@ async function setupAchievePage() {
   const today = new Date().toLocaleDateString("sv-SE"); // yyyy-MM-dd（端末の日付）
 
   // 互いに待つ必要のない処理は、ページを開いた時点で同時に始める
-  const maintenance = isMaintenance();
-  const workCategories = getCategories(KUBUN.WORK_CATEGORY);
-  const workItems = getCategories(KUBUN.WORK_ITEM);
+  //   ・メンテナンス状態と区分値：GAS の1回の呼び出しでまとめて取得
+  //   ・勤務場所：ログイン（LIFFの初期化）が済んだらすぐ取りに行く
+  const pageData = getPageData([KUBUN.WORK_CATEGORY, KUBUN.WORK_ITEM]);
   const liffState = initLiff(LIFF_ID);
-  // 勤務場所はログイン（LIFFの初期化）が済んだらすぐ取りに行く
   const todayStore = liffState.then((state) => (state === "ready" ? fetchAssignedStore(today) : null));
+  todayStore.catch(() => {}); // メンテナンス中などで使わなかった場合に警告を出さない
 
-  // メンテナンス中ならほかの結果は使わない（後で失敗しても警告を出さない）
-  [workCategories, workItems, todayStore].forEach((p) => p.catch(() => {}));
-  if (await maintenance) {
+  let data;
+  try {
+    data = await pageData;
+  } catch (error) {
+    console.error("初期化エラー:", error);
+    showLoadError(LOAD_ERROR_MESSAGE);
+    return;
+  }
+  if (data.isMaintenance) {
     showMaintenancePage();
     return;
   }
@@ -49,20 +55,12 @@ async function setupAchievePage() {
 
   getEl("datePicker").value = today;
   getEl("datePicker").max = today; // 未来の日付の実績は登録できないようにする
-  try {
-    await Promise.all([
-      loadLocation(todayStore),
-      workCategories.then((list) => setSelectOptions(getEl("workCategory"), list)),
-      workItems.then(renderWorkItems, (error) => {
-        getEl("workItemList").innerHTML = '<div class="list-group-item text-danger">データの取得に失敗しました</div>';
-        throw error;
-      }),
-    ]);
-    hideOverlay();
-  } catch (error) {
-    console.error("初期化エラー:", error);
-    showLoadError(LOAD_ERROR_MESSAGE);
-  }
+  setSelectOptions(getEl("workCategory"), data.categories[KUBUN.WORK_CATEGORY] || []);
+  renderWorkItems(data.categories[KUBUN.WORK_ITEM] || []);
+
+  // 勤務場所は待たずに画面を出す（取れるまでは「読み込み中...」で、送信もできない）
+  hideOverlay();
+  loadLocation(todayStore);
 
   getEl("datePicker").addEventListener("change", (e) => loadLocation(fetchAssignedStore(e.target.value)));
   getEl("workForm").addEventListener("submit", submitAchievement);
