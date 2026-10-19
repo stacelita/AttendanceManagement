@@ -1,7 +1,7 @@
 /**
  * スタッフ情報登録ページ
  */
-import { ACTION, LIFF_ID } from "../config.js";
+import { ACTION, LIFF_ID, CONFIG_ERROR } from "../config.js";
 import { postToGas } from "../api.js";
 import { isMaintenance } from "../master.js";
 import { initLiff, getLineProfile, getIdToken, sendMessageIfInClient, closeLiffWindow } from "../liff-client.js";
@@ -16,12 +16,18 @@ const BIRTH_YEAR_FROM = 1940;
 setupProfilePage();
 
 async function setupProfilePage() {
+  // エンドポイントURLに dept・liffId がなければ、どの部署か分からないので何もしない
+  if (CONFIG_ERROR) {
+    showLoadError(CONFIG_ERROR);
+    return;
+  }
+
   preventSubmitOnEnter();
   setupBirthDateSelects();
 
   // メンテナンス判定と LIFF の初期化は同時に始め、ログインが済んだらすぐ登録済みの情報を取りに行く
   const maintenance = isMaintenance();
-  const liffState = initLiff(LIFF_ID.PROFILE);
+  const liffState = initLiff(LIFF_ID);
   const savedProfile = liffState.then((state) => (state === "ready" ? fetchSavedProfile() : null));
 
   savedProfile.catch(() => {}); // メンテナンス中で使わなかった場合に警告を出さない

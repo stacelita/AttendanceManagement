@@ -2,29 +2,25 @@
  * 設定
  *
  * 部署ごとの設定は、LIFFアプリの「エンドポイントURL」のパラメータで受け取る（ページは全部署で共通）
- *   例）.../pages/achieve/?dept=SALES2&liffId=xxxxxxxxxx-xxxxxxxx
- *   パラメータがなければ第1営業部（従来の設定）として動く
+ *   例）.../pages/achieve/?dept=SALES1&liffId=xxxxxxxxxx-xxxxxxxx
+ *   dept・liffId のどちらかがなければ、画面に設定エラーを表示して止める（既定の部署はない）
  */
 
 const pageParams = new URLSearchParams(window.location.search);
 
-/** 部署コード（第1営業部は空） */
+/** 部署コード（エンドポイントURLの dept） */
 export const DEPT = pageParams.get("dept") || "";
 
-const liffIdFromUrl = pageParams.get("liffId") || "";
+/** このページの LIFF ID（エンドポイントURLの liffId） */
+export const LIFF_ID = pageParams.get("liffId") || "";
 
-/** LIFF ID（URLで指定がなければ第1営業部のもの） */
-export const LIFF_ID = {
-  ACHIEVE: liffIdFromUrl || "2008956543-HV2ZIzKe",
-  PROFILE: liffIdFromUrl || "2008956543-MaLNj6aF",
-};
+/** 設定の不足（dept・liffId がそろっていれば null。足りなければ画面に出す文言） */
+export const CONFIG_ERROR = DEPT && LIFF_ID
+  ? null
+  : "画面の設定に誤りがあるため、表示できません。管理者に連絡してください。（LIFFアプリのエンドポイントURLに dept と liffId が必要です）";
 
-// 第1営業部が共通のGASへ移行するまでは、部署の指定がなければ従来のGASを使う
-const GAS_URL_LEGACY = "https://script.google.com/macros/s/AKfycbx_N2GjqMIPN9iiIh94CPXOF3Ri4gHK4QOhDT3d4rUKGQ__uKMhVWGv3esx6LqF6Ssr2Q/exec";
-const GAS_URL_SHARED = "https://script.google.com/macros/s/AKfycbyhNwPwFZrsfIZAwHQTGaTPq6E-0mt4nLnLNYXmHkIizT9kDXeRfN5HApwYwGlTpawp/exec";
-
-/** 呼び出すGASのURL */
-export const GAS_URL = DEPT ? GAS_URL_SHARED : GAS_URL_LEGACY;
+/** 呼び出すGASのURL（全部署で共通） */
+export const GAS_URL = "https://script.google.com/macros/s/AKfycbyhNwPwFZrsfIZAwHQTGaTPq6E-0mt4nLnLNYXmHkIizT9kDXeRfN5HApwYwGlTpawp/exec";
 
 /** GASの処理名（action） */
 export const ACTION = {

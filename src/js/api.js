@@ -3,7 +3,7 @@
  *
  * ・GET ：個人のデータを扱わない取得（区分値・メンテナンス状態）。IDトークンはURLに載せないため付けない
  * ・POST：個人のデータを扱う処理。IDトークンを付けて、GAS側で本人確認する
- * ・どちらも部署コード（dept）を付ける
+ * ・どちらも部署コード（dept）を必ず付ける
  * ・GASが { status: "error" } を返したら、その message で例外を投げる
  */
 import { DEPT, GAS_URL } from "./config.js";
@@ -16,8 +16,7 @@ const SERVER_ERROR_MESSAGE = "サーバーとの通信に失敗しました。�
  * @param {Object} [params]
  */
 export async function getFromGas(action, params = {}) {
-  const search = new URLSearchParams({ action });
-  if (DEPT) search.set("dept", DEPT);
+  const search = new URLSearchParams({ action, dept: DEPT });
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) search.set(key, String(value));
   });
@@ -33,8 +32,7 @@ export async function getFromGas(action, params = {}) {
  * @param {string|null} idToken LINEのIDトークン（GAS側の本人確認に使う）
  */
 export async function postToGas(action, params, idToken) {
-  const body = { action, ...params };
-  if (DEPT) body.dept = DEPT;
+  const body = { action, dept: DEPT, ...params };
   if (idToken) body.idToken = idToken;
 
   // Content-Type を指定しないことで、GASが受け付けない「プリフライトリクエスト」を避ける

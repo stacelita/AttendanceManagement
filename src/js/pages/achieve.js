@@ -1,7 +1,7 @@
 /**
  * 勤務実績入力ページ
  */
-import { ACTION, KUBUN, LIFF_ID } from "../config.js";
+import { ACTION, KUBUN, LIFF_ID, CONFIG_ERROR } from "../config.js";
 import { postToGas } from "../api.js";
 import { isMaintenance, getCategories } from "../master.js";
 import { initLiff, getLineProfile, getIdToken, sendMessageIfInClient, closeLiffWindow } from "../liff-client.js";
@@ -16,6 +16,12 @@ const MAX_ITEM_COUNT = 10; // 獲得項目の数量の上限
 setupAchievePage();
 
 async function setupAchievePage() {
+  // エンドポイントURLに dept・liffId がなければ、どの部署か分からないので何もしない
+  if (CONFIG_ERROR) {
+    showLoadError(CONFIG_ERROR);
+    return;
+  }
+
   preventSubmitOnEnter();
   const today = new Date().toLocaleDateString("sv-SE"); // yyyy-MM-dd（端末の日付）
 
@@ -23,7 +29,7 @@ async function setupAchievePage() {
   const maintenance = isMaintenance();
   const workCategories = getCategories(KUBUN.WORK_CATEGORY);
   const workItems = getCategories(KUBUN.WORK_ITEM);
-  const liffState = initLiff(LIFF_ID.ACHIEVE);
+  const liffState = initLiff(LIFF_ID);
   // 勤務場所はログイン（LIFFの初期化）が済んだらすぐ取りに行く
   const todayStore = liffState.then((state) => (state === "ready" ? fetchAssignedStore(today) : null));
 
